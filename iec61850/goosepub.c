@@ -45,7 +45,7 @@ void gooseBufferPrepare(struct s_goosePublisher* vp_gooseData, struct s_gooseAnd
   vp_gooseData->m_appId = DEF_gooseDefaultAppid;
   vp_gooseData->mp_buffer = (char*)malloc(DEF_maxFrameLen);
   memset(vp_gooseData->mp_buffer, 0, DEF_maxFrameLen);
-  vp_gooseData->m_frameInterval = 5000;
+  vp_gooseData->m_frameInterval = DEF_gooseDefaultFrameInterval;
   vp_gooseData->m_lastTimerCount = 0;
   vp_gooseData->m_enable = 0;
   vp_gooseData->m_length = 0;

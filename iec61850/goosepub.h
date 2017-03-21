@@ -19,6 +19,7 @@
 
 //  macro define
 
+#define DEF_gooseDefaultFrameInterval 5
 #define DEF_gooseDefaultDMac {(char)0x01,(char)0x0c,(char)0xcd,(char)0x01,(char)0x00,(char)0x01}
 #define DEF_gooseDefaultPriority 0x4
 #define DEF_gooseDefaultVlanId 0x1
