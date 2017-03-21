@@ -1,6 +1,6 @@
 # flags
 LDFLAGS = -lpthread
-CFLAGS = -Wall -v 
+CFLAGS = -Wall -v -H -g
 CC = gcc $(CFLAGS) $(LDFLAGS)
 # source
 OBJECT = main.o rawsocket.o sometools.o goosepub.o svpub.o

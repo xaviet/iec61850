@@ -35,9 +35,9 @@ int createThread(void*, void*);
 
 void getDateTime(struct timeval*);
 
-void signalintHandler(void);
+void signalintHandler();
 
-void signalTimerHandler(void);
+void signalTimerHandler();
 
 void setTimer(int, int);
 

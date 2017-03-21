@@ -52,6 +52,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
+    <RemoteRootDir>/opt</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -67,6 +68,12 @@
     <RemoteCppCompileToolExe>gcc</RemoteCppCompileToolExe>
     <RemoteLdToolExe>gcc</RemoteLdToolExe>
     <IncludePath>C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\Linux\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <RemoteProjectDir>/opt/$(ProjectName)</RemoteProjectDir>
+    <RemoteCCompileToolExe>gcc</RemoteCCompileToolExe>
+    <RemoteCppCompileToolExe>gcc</RemoteCppCompileToolExe>
+    <RemoteLdToolExe>gcc</RemoteLdToolExe>
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="goosepub.c" />
@@ -95,6 +102,17 @@
       <RuntimeTypeInfo>
       </RuntimeTypeInfo>
       <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Link>
+      <LibraryDependencies>pthread</LibraryDependencies>
+    </Link>
+    <ClCompile>
+      <ThreadSafeStatics />
+    </ClCompile>
+    <ClCompile>
+      <RuntimeTypeInfo />
     </ClCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

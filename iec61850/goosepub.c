@@ -113,9 +113,14 @@ void gooseThreadRun(struct s_gooseAndSvThreadData* vp_gooseThreadData)
   gooseCmdReg((void**)(&t_gooseDataModify));
   while (vp_gooseThreadData->m_running)
   {
+    //printf("%d ", vp_gooseThreadData->m_index);
+    goosePayloadCreate(t_goosePub);
+    sendData(vp_gooseThreadData->mp_socket, t_goosePub->mp_buffer, 64);
+    //memDisp(t_goosePub->mp_buffer, 64);
     if (vp_gooseThreadData->m_cmd > 0 && t_gooseDataModify[vp_gooseThreadData->m_cmd]!=NULL)
     {
       t_gooseDataModify[vp_gooseThreadData->m_cmd](t_goosePub, vp_gooseThreadData->mp_value);
+      t_goosePub->m_length = 0;
       vp_gooseThreadData->m_cmd = 0;
     }
     if (t_goosePub->m_enable)

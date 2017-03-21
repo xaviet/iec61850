@@ -37,8 +37,7 @@ struct s_gooseAndSvThreadData
   struct s_ethernetSocket* mp_socket;
   int m_cmd;
   void* mp_value;
-  struct s_gooseThreadData* mp_last;
-  struct s_gooseThreadData* mp_next;
+  struct s_gooseAndSvThreadData* mp_next;
 }__attribute__((aligned(1)));
 
 struct s_goosePublisher

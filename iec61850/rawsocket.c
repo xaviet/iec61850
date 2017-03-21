@@ -88,7 +88,7 @@ int receiveData(struct s_ethernetSocket* vp_socket, char* vp_buffer, int v_lengt
       exit(1);
     }
   }
-  return(recvfrom(vp_socket->m_rawSocket, vp_buffer, (unsigned int)v_length, MSG_DONTWAIT, 0, 0));
+  return((int)recvfrom(vp_socket->m_rawSocket, vp_buffer, (unsigned int)v_length, MSG_DONTWAIT, 0, 0));
 }
 
 void sendData(struct s_ethernetSocket* vp_socket, char* vp_buffer, int v_length)

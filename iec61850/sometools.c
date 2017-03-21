@@ -44,12 +44,12 @@ void getDateTime(struct timeval* vp_time)
   gettimeofday(vp_time, NULL);
 }
 
-void signalintHandler(void)
+void signalintHandler()
 {
   g_running = 0;
 }
 
-void signalTimerHandler(void)
+void signalTimerHandler()
 {
   g_timerCount++;
 }
@@ -83,8 +83,8 @@ void createSignal(int** vp_running, long long** vp_timerCount, int v_sec, int v_
 
 char* copyString(char* vp_string)
 {
-  unsigned int t_newStringLength = strlen(vp_string) + 1;
-  char* t_newString = (char*)malloc(t_newStringLength);
-  memcpy(t_newString, vp_string, t_newStringLength);
+  int t_newStringLength = (int)strlen(vp_string) + 1;
+  char* t_newString = (char*)malloc((size_t)t_newStringLength);
+  memcpy(t_newString, vp_string, (size_t)t_newStringLength);
   return(t_newString);
 }

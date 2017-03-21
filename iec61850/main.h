@@ -43,7 +43,7 @@
 #define DEF_timeAccurSec 0
 #define DEF_timeAccurUSec 1000
 
-#define DEF_interfaceName "eno33554984"
+#define DEF_interfaceName "eth0"
 
 //  struct
 
@@ -52,7 +52,8 @@ struct s_appData
   long long* mp_timerCount;
   int* mp_running;
   struct s_ethernetSocket* mp_socket;
-  struct s_gooseAndSvThreadData* mp_threadHead;
+  struct s_gooseAndSvThreadData* mp_threadDataHead;
+  int m_threadCounter;
 }__attribute__((aligned(1)));
 
 //  global
@@ -61,13 +62,19 @@ struct s_appData* gp_appData;
 
 //  function
 
+struct s_gooseAndSvThreadData* threadDataCreate();
+
+void gooseAndSvPubCreate();
+
+void threadDataAppend(struct s_appData*, struct s_gooseAndSvThreadData*);
+
 void createAppData();
 
 void destoryAppData(struct s_appData*);
 
-void work(void);
+void work();
 
-void test(void);
+void test();
 
 int main(int, char**);
 
