@@ -9,14 +9,14 @@
 
 //  function
 
-void sigintHandler(void)
+void signalintHandler(void)
 {
   gp_appData->m_running = 0;
 }
 
 void signalTimerHandler(void)
 {
-  ++gp_appData->m_timerCount;
+  gp_appData->m_timerCount++;
 }
 
 void setTimer(int v_sec, int v_uSec)
@@ -35,7 +35,10 @@ void createAppData()
   memset(gp_appData, 0, sizeof(struct s_appData));
   gp_appData->mp_socket = createSocket(DEF_interfaceName, NULL);
   gp_appData->m_timerCount = 0;
-  gp_appData->m_running = 1;
+  gp_appData->m_running = 1; 
+  signal(SIGINT, (void*)signalintHandler);
+  signal(SIGALRM, (void*)signalTimerHandler);
+  setTimer(DEF_timeAccurSec, DEF_timeAccurUSec);
 }
 
 void destoryAppData(struct s_appData* vp_appData)
@@ -56,13 +59,17 @@ void work(void)
 
 void test(void)
 {
-  signal(SIGINT, (void*)sigintHandler);
+  gp_appData = (struct s_appData*)malloc(sizeof(struct s_appData));
+  memset(gp_appData, 0, sizeof(struct s_appData));
+  gp_appData->m_timerCount = 0;
+  gp_appData->m_running = 1;
+  signal(SIGINT, (void*)signalintHandler);
   signal(SIGALRM, (void*)signalTimerHandler);
   setTimer(DEF_timeAccurSec, DEF_timeAccurUSec);
 }
 
 int main(int argc, char** argv)
 {
-  (0)?work():test();
+  (1)?work():test();
   return(0);
 }

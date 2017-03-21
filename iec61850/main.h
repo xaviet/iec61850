@@ -68,7 +68,7 @@ static struct s_appData* gp_appData = NULL;
 
 //  function
 
-void sigintHandler(void);
+void signalintHandler(void);
 
 void signalTimerHandler(void);
 
@@ -81,5 +81,7 @@ void destoryAppData(struct s_appData*);
 void work(void);
 
 void test(void);
+
+int main(int, char**);
 
 #endif
