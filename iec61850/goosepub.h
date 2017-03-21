@@ -20,8 +20,8 @@
 //  macro define
 
 #define DEF_gooseDefaultDMac {(char)0x01,(char)0x0c,(char)0xcd,(char)0x01,(char)0x00,(char)0x01}
-#define DEF_gooseDefaultPriority 4
-#define DEF_gooseDefaultVlanId 1
+#define DEF_gooseDefaultPriority 0x4
+#define DEF_gooseDefaultVlanId 0x1
 #define DEF_gooseDefaultAppid 0x0001
 #define DEF_gooseCmdType 256
 
@@ -80,15 +80,15 @@ void goosePublisherSetGoCbRef(struct s_goosePublisher*, char*);
 
 void goosePublisherSetDataSetRef(struct s_goosePublisher*, char*);
 
-void gooseBufferPrepare(struct s_goosePublisher*, struct s_gooseAndSvThreadData*);
+void goosePublisherReset(struct s_goosePublisher*, char*);
 
-void goosePubReset(struct s_goosePublisher*);
+void gooseBufferPrepare(struct s_goosePublisher*, struct s_gooseAndSvThreadData*);
 
 struct s_goosePublisher* goosePubCreate(struct s_gooseAndSvThreadData*);
 
 void goosePubDestory(struct s_goosePublisher*);
 
-void goosePayloadCreate();
+void goosePayloadCreate(struct s_goosePublisher*);
 
 void gooseCmdReg(void**);
 

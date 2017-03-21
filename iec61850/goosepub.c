@@ -29,6 +29,12 @@ void goosePublisherSetDataSetRef(struct s_goosePublisher* vp_gooseData, char* vp
   vp_gooseData->m_dataSetRef = copyString(vp_dataSetRef);
 }
 
+void goosePublisherReset(struct s_goosePublisher* vp_gooseData, char* vp_dataSetRef)
+{
+  vp_gooseData->m_sqNum = 0;
+  vp_gooseData->m_stNum = 1;
+}
+
 void gooseBufferPrepare(struct s_goosePublisher* vp_gooseData, struct s_gooseAndSvThreadData* vp_gooseThreadData)
 {
   char t_mac[DEF_macAddrLen] = DEF_gooseDefaultDMac;
@@ -39,33 +45,12 @@ void gooseBufferPrepare(struct s_goosePublisher* vp_gooseData, struct s_gooseAnd
   vp_gooseData->m_appId = DEF_gooseDefaultAppid;
   vp_gooseData->mp_buffer = (char*)malloc(DEF_maxFrameLen);
   memset(vp_gooseData->mp_buffer, 0, DEF_maxFrameLen);
-  memcpy(vp_gooseData->mp_buffer, vp_gooseData->m_dAddr, DEF_macAddrLen);
-  memcpy(vp_gooseData->mp_buffer + 6, vp_gooseData->m_sAddr, DEF_macAddrLen);
-  int bufPos = 12;
-  /* Priority tag - IEEE 802.1Q */
-  vp_gooseData->mp_buffer[bufPos++] = (char)0x81;
-  vp_gooseData->mp_buffer[bufPos++] = (char)0x00;
-  vp_gooseData->mp_buffer[bufPos++] = (char)((vp_gooseData->m_priority << 5) + (vp_gooseData->m_vlanId / 256)); /* Priority + VLAN-ID */
-  vp_gooseData->mp_buffer[bufPos++] = (char)(vp_gooseData->m_vlanId % 256); /* VLAN-ID */
-  /* EtherType GOOSE */
-  vp_gooseData->mp_buffer[bufPos++] = (char)0x88;
-  vp_gooseData->mp_buffer[bufPos++] = (char)0xB8;
-  vp_gooseData->mp_buffer[bufPos++] = DEF_gooseDefaultAppid / 256;
-  vp_gooseData->mp_buffer[bufPos++] = DEF_gooseDefaultAppid % 256;
-  vp_gooseData->m_lengthField = bufPos;
-  vp_gooseData->mp_buffer[bufPos++] = (char)0x00;
-  vp_gooseData->mp_buffer[bufPos++] = (char)0x08;
-  vp_gooseData->mp_buffer[bufPos++] = (char)0x00;
-  vp_gooseData->mp_buffer[bufPos++] = (char)0x00;
-  vp_gooseData->mp_buffer[bufPos++] = (char)0x00;
-  vp_gooseData->mp_buffer[bufPos++] = (char)0x00;
-  vp_gooseData->m_payloadStart = bufPos;
-}
-
-void goosePubReset(struct s_goosePublisher* vp_gooseData)
-{
-  vp_gooseData->m_sqNum = 0;
-  vp_gooseData->m_stNum = 1;
+  vp_gooseData->m_frameInterval = 5000;
+  vp_gooseData->m_lastTimerCount = 0;
+  vp_gooseData->m_enable = 0;
+  vp_gooseData->m_length = 0;
+  vp_gooseData->m_stNum = 0;
+  vp_gooseData->m_sqNum = 1;
 }
 
 struct s_goosePublisher* goosePubCreate(struct s_gooseAndSvThreadData* vp_gooseThreadData)
@@ -73,7 +58,6 @@ struct s_goosePublisher* goosePubCreate(struct s_gooseAndSvThreadData* vp_gooseT
   struct s_goosePublisher* tp_gooseData = (struct s_goosePublisher*)malloc(sizeof(struct s_goosePublisher));
   memset(tp_gooseData, 0, sizeof(struct s_goosePublisher));
   gooseBufferPrepare(tp_gooseData, (struct s_gooseAndSvThreadData*)vp_gooseThreadData);
-  goosePubReset(tp_gooseData);
   return(tp_gooseData);
 }
 
@@ -86,9 +70,28 @@ void goosePubDestory(struct s_goosePublisher* vp_gooseData)
   free(vp_gooseData);
 }
 
-void goosePayloadCreate()
+void goosePayloadCreate(struct s_goosePublisher* vp_gooseData)
 {
-
+  int bufPos = 12;
+  memcpy(vp_gooseData->mp_buffer, vp_gooseData->m_dAddr, DEF_macAddrLen);
+  memcpy(vp_gooseData->mp_buffer + 6, vp_gooseData->m_sAddr, DEF_macAddrLen);
+  /* Priority tag - IEEE 802.1Q */
+  vp_gooseData->mp_buffer[bufPos++] = (char)0x81;
+  vp_gooseData->mp_buffer[bufPos++] = (char)0x00;
+  vp_gooseData->mp_buffer[bufPos++] = (char)((vp_gooseData->m_priority << 5) + (vp_gooseData->m_vlanId / 256)); /* Priority + VLAN-ID */
+  vp_gooseData->mp_buffer[bufPos++] = (char)(vp_gooseData->m_vlanId % 256); /* VLAN-ID */
+  vp_gooseData->mp_buffer[bufPos++] = (char)0x88; /* EtherType GOOSE */
+  vp_gooseData->mp_buffer[bufPos++] = (char)0xB8;
+  vp_gooseData->mp_buffer[bufPos++] = DEF_gooseDefaultAppid / 256;
+  vp_gooseData->mp_buffer[bufPos++] = DEF_gooseDefaultAppid % 256;
+  vp_gooseData->m_lengthField = bufPos;
+  vp_gooseData->mp_buffer[bufPos++] = (char)0x00;
+  vp_gooseData->mp_buffer[bufPos++] = (char)0x08;
+  vp_gooseData->mp_buffer[bufPos++] = (char)0x00;
+  vp_gooseData->mp_buffer[bufPos++] = (char)0x00;
+  vp_gooseData->mp_buffer[bufPos++] = (char)0x00;
+  vp_gooseData->mp_buffer[bufPos++] = (char)0x00;
+  vp_gooseData->m_payloadStart = bufPos;
 }
 
 void gooseCmdReg(void** vp_gooseDataModify)
@@ -119,7 +122,7 @@ void gooseThreadRun(struct s_gooseAndSvThreadData* vp_gooseThreadData)
     {
       if (t_goosePub->m_length == 0)
       {
-        goosePayloadCreate();
+        goosePayloadCreate(t_goosePub);
       }
       if (*(vp_gooseThreadData->mp_timerCount) > (t_goosePub->m_lastTimerCount + t_goosePub->m_frameInterval))
       {
