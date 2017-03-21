@@ -16,10 +16,11 @@
 
 #include "rawsocket.h"
 #include "sometools.h"
+#include "goosepub.h"
 
 //  macro define
 
-#define DEF_svDefaultDMac {0x01,0x0c,0xcd,0x04,0x00,0x01}
+#define DEF_svDefaultDMac {(char)0x01,(char)0x0c,(char)0xcd,(char)0x04,(char)0x00,(char)0x01}
 #define DEF_svDefaultPriority 4
 #define DEF_svDefaultVlanId 1
 #define DEF_svDefaultAppid 0x4001
@@ -29,6 +30,7 @@
 struct s_svPublisher
 {
   char* mp_buffer;
+  int m_frameInterval;
   char m_dAddr[DEF_macAddrLen];
   char m_sAddr[DEF_macAddrLen];
   char m_priority;
@@ -47,7 +49,6 @@ struct s_svPublisher
   int m_hasDataSetName; /* optional fields in sv asdu */
   int m_hasRefreshTime;
   int m_hasSampleRate;
-  struct s_appData* mp_appData;
 }__attribute__((aligned(1)));
 
 //  global

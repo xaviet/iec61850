@@ -12,6 +12,8 @@
 //include files
 
 #include "stdio.h"
+#include "malloc.h"
+#include "string.h"
 #include "pthread.h"
 #include "signal.h"
 #include "sys/time.h"
@@ -22,6 +24,9 @@
 
 //  global
 
+long long g_timerCount;
+int g_running;
+
 //  function
 
 int memDisp(void*, int);
@@ -29,5 +34,15 @@ int memDisp(void*, int);
 int createThread(void*, void*);
 
 void getDateTime(struct timeval*);
+
+void signalintHandler(void);
+
+void signalTimerHandler(void);
+
+void setTimer(int, int);
+
+void createSignal(int**,long long**,int, int);
+
+char* copyString(char*);
 
 #endif

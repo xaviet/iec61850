@@ -41,38 +41,25 @@
 //  macro define
 
 #define DEF_timeAccurSec 0
-#define DEF_timeAccurUSec 1
+#define DEF_timeAccurUSec 1000
 
 #define DEF_interfaceName "eno33554984"
 
 //  struct
 
-struct s_threadData
-{
-  int index;
-  int m_threadId;
-  struct s_threadData* mp_next;
-}__attribute__((aligned(1)));
-
 struct s_appData
 {
-  int m_running;
-  long long m_timerCount;
+  long long* mp_timerCount;
+  int* mp_running;
   struct s_ethernetSocket* mp_socket;
-  struct s_threadData* mp_threadHead;
+  struct s_gooseAndSvThreadData* mp_threadHead;
 }__attribute__((aligned(1)));
 
 //  global
 
-static struct s_appData* gp_appData = NULL;
+struct s_appData* gp_appData;
 
 //  function
-
-void signalintHandler(void);
-
-void signalTimerHandler(void);
-
-void setTimer(int, int);
 
 void createAppData();
 
