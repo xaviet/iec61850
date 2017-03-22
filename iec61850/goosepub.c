@@ -219,7 +219,7 @@ int getTlvIntArrayLength(char* vp_integer, int v_originalSize)
     }
     break;
   }
-  int t_bytesToDelete = t_bytePosition - vp_integer;
+  int t_bytesToDelete = (int)(t_bytePosition - vp_integer);
   int t_newSize = v_originalSize;
   if (t_bytesToDelete)
   {
@@ -308,9 +308,9 @@ void gooseThreadRun(struct s_gooseAndSvThreadData* vp_gooseThreadData)
         stNumMod(t_goosePub);
         goosePayloadCreate(t_goosePub);
       }
-      if (*(vp_gooseThreadData->mp_timerCount) > (t_goosePub->m_lastTimerCount + t_goosePub->m_frameInterval))
+      //if (*(vp_gooseThreadData->mp_timerCount) > (t_goosePub->m_lastTimerCount + t_goosePub->m_frameInterval))
       {
-        t_goosePub->m_lastTimerCount = *(vp_gooseThreadData->mp_timerCount);
+        //t_goosePub->m_lastTimerCount = *(vp_gooseThreadData->mp_timerCount);
         sendData(vp_gooseThreadData->mp_socket, t_goosePub->mp_buffer, t_goosePub->m_length);
       }
     }
