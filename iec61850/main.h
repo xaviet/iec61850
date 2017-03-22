@@ -41,9 +41,10 @@
 //  macro define
 
 #define DEF_timeAccurSec 0
-#define DEF_timeAccurUSec 1000
+#define DEF_timeAccurUSec 1
 
-#define DEF_interfaceName "eth0"
+//#define DEF_interfaceName "eth0"
+#define DEF_interfaceName "eno33554984"
 
 //  struct
 

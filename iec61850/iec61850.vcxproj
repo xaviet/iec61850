@@ -76,6 +76,7 @@
     <RemoteLdToolExe>gcc</RemoteLdToolExe>
   </PropertyGroup>
   <ItemGroup>
+    <ClCompile Include="61850.c" />
     <ClCompile Include="goosepub.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="rawsocket.c" />
@@ -86,6 +87,7 @@
     <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="61850.h" />
     <ClInclude Include="goosepub.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="rawsocket.h" />

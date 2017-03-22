@@ -61,12 +61,27 @@ void threadDataAppend(struct s_appData* vp_appData, struct s_gooseAndSvThreadDat
   }
 }
 
+void gooseAndSvPubMod(struct s_gooseAndSvThreadData* vp_threadData, int v_type, char* vp_buff, int v_length)
+{
+  while (vp_threadData->m_cmd != 0)
+  {
+    sleep(0);
+  }
+  vp_threadData->mp_value = vp_buff;
+  vp_threadData->m_length = v_length;
+  vp_threadData->m_cmd = v_type;
+}
+
 void gooseAndSvPubCreate()
 {
   printf("gooseAndSvPubCreate\n");
   struct s_gooseAndSvThreadData* tp_threadData = threadDataCreate();
   threadDataAppend(gp_appData, tp_threadData);
   createThread(gooseThreadRun, tp_threadData);
+  gooseAndSvPubMod(tp_threadData, 101, "ML2201AMUGO/LLN0$GO$gocb1", 0);
+  gooseAndSvPubMod(tp_threadData, 102, "ML2201AMUGO/LLN0$GO$gocb1", 0);
+  gooseAndSvPubMod(tp_threadData, 103, "ML2201AMUGO/LLN0$dsGOOSE", 0);
+  gooseAndSvPubMod(tp_threadData, 1, NULL, 1);
 }
 
 void work()

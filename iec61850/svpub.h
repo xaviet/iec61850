@@ -14,6 +14,7 @@
 #include "sys/time.h"
 #include "stdint.h"
 
+#include "61850.h"
 #include "rawsocket.h"
 #include "sometools.h"
 #include "goosepub.h"
