@@ -86,10 +86,10 @@ void goosePayloadCreate(struct s_goosePublisher* vp_gooseData)
   memcpy(vp_gooseData->mp_buffer, vp_gooseData->m_dAddr, DEF_macAddrLen);
   memcpy(vp_gooseData->mp_buffer + 6, vp_gooseData->m_sAddr, DEF_macAddrLen);
   /* Priority tag - IEEE 802.1Q */
-  vp_gooseData->mp_buffer[t_bufPos++] = (char)0x81;
-  vp_gooseData->mp_buffer[t_bufPos++] = (char)0x00;
-  vp_gooseData->mp_buffer[t_bufPos++] = (char)((vp_gooseData->m_priority << 5) + (vp_gooseData->m_vlanId / 256)); /* Priority + VLAN-ID */
-  vp_gooseData->mp_buffer[t_bufPos++] = (char)(vp_gooseData->m_vlanId % 256); /* VLAN-ID */
+  //vp_gooseData->mp_buffer[t_bufPos++] = (char)0x81;
+  //vp_gooseData->mp_buffer[t_bufPos++] = (char)0x00;
+  //vp_gooseData->mp_buffer[t_bufPos++] = (char)((vp_gooseData->m_priority << 5) + (vp_gooseData->m_vlanId / 256)); /* Priority + VLAN-ID */
+  //vp_gooseData->mp_buffer[t_bufPos++] = (char)(vp_gooseData->m_vlanId % 256); /* VLAN-ID */
   vp_gooseData->mp_buffer[t_bufPos++] = (char)0x88; /* EtherType GOOSE */
   vp_gooseData->mp_buffer[t_bufPos++] = (char)0xB8;
   vp_gooseData->mp_buffer[t_bufPos++] = DEF_gooseDefaultAppid / 256;
@@ -315,7 +315,7 @@ void gooseThreadRun(struct s_gooseAndSvThreadData* vp_gooseThreadData)
         sendData(vp_gooseThreadData->mp_socket, t_goosePub->mp_buffer, t_goosePub->m_length);
       }
     }
-    //sleep(0);
+    sleep(1);
   }
   goosePubDestory(t_goosePub);
 }
