@@ -153,6 +153,7 @@ void goosePayloadCreate(struct s_goosePublisher* vp_gooseData)
   t_bufPos = setGooseTlvBoolean((char)0x89, vp_gooseData->m_needsCommission, t_buff, t_bufPos);
   /* Encode numDatSetEntries */
 
+  vp_gooseData->m_length = t_bufPos;
 }
 
 int setGooseTlvLengthValue(int v_length, char* vp_buffer, int v_bufPos)
