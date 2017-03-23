@@ -21,7 +21,7 @@
 
 //  macro define
 
-#define DEF_gooseDefaultFrameInterval 5000000
+#define DEF_gooseDefaultFrameInterval 5000
 #define DEF_gooseDefaultDMac {(char)0x01,(char)0x0c,(char)0xcd,(char)0x01,(char)0x00,(char)0x01}
 #define DEF_gooseDefaultPriority 0x4
 #define DEF_gooseDefaultVlanId 0x1
@@ -30,19 +30,6 @@
 #define DEF_gooseTimeAllowedToLive 10000
 
 //  struct
-
-struct s_gooseAndSvThreadData
-{
-  int m_index;
-  int m_threadId;
-  long long* mp_timerCount;
-  int m_running;
-  struct s_ethernetSocket* mp_socket;
-  int m_cmd;
-  void* mp_value;
-  int m_length;
-  struct s_gooseAndSvThreadData* mp_next;
-}__attribute__((aligned(1)));
 
 struct s_goosePublisher
 {
@@ -66,15 +53,19 @@ struct s_goosePublisher
   int m_fixedOffs;
   uint32_t m_stNum;
   uint32_t m_sqNum;
+  int m_sqNumPos;
   int m_test;
   uint32_t m_confRev;
   uint32_t m_timeAllowedToLive;
   int m_needsCommission;
-  
+  uint32_t m_numDataSetEntries;
+  struct s_linkList* mp_dataSetHead;
   struct timeval m_dateTime; /* time when stNum is increased */
 }__attribute__((aligned(1)));
 
 //  global
+
+void(*g_gooseDataModify[DEF_gooseCmdType])(struct s_goosePublisher*, void*, int);
 
 //  function
 
@@ -89,6 +80,8 @@ void goosePublisherSetGoID(struct s_goosePublisher*, char*, int);
 void goosePublisherSetGoCbRef(struct s_goosePublisher*, char*, int);
 
 void goosePublisherSetDataSetRef(struct s_goosePublisher*, char*, int);
+
+void goosePublisherSetDataSetEntriesInt(struct s_goosePublisher*, char*, int);
 
 void gooseBufferPrepare(struct s_goosePublisher*, struct s_gooseAndSvThreadData*);
 
@@ -108,11 +101,21 @@ int setGooseTlvOctet(char, char*, int, char*, int);
 
 struct s_goosePublisher* goosePubCreate(struct s_gooseAndSvThreadData*);
 
+void gooseDataSetEntriesDestory(struct s_linkList*);
+
 void goosePubDestory(struct s_goosePublisher*);
 
-void goosePayloadCreate(struct s_goosePublisher*);
+int gooseHeadCreate(struct s_goosePublisher*);
+
+int gooseApduCalculate(struct s_goosePublisher*);
+
+int goosePduEncode(struct s_goosePublisher*, int);
+
+int goosePayloadCreate(struct s_goosePublisher*);
 
 void gooseCmdReg(void**);
+
+void gooseDataUpdate(struct s_gooseAndSvThreadData*, struct s_goosePublisher*);
 
 void gooseThreadRun(struct s_gooseAndSvThreadData*);
 

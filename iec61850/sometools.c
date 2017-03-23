@@ -68,14 +68,14 @@ void createSignal(int** vp_running, long long** vp_timerCount, int v_sec, int v_
 {
   if (vp_running!=NULL)
   {
-    *vp_running = &g_running;
-    **vp_running = 1;
+    *vp_running = (int*)&g_running;
+    g_running = 1;
     signal(SIGINT, (void*)signalintHandler);
   }
   if (vp_timerCount != NULL)
   {
-    *vp_timerCount = &g_timerCount;
-    **vp_timerCount = 10;
+    *vp_timerCount = (long long*)&g_timerCount;
+    g_timerCount = 0;
     signal(SIGALRM, (void*)signalTimerHandler);
     setTimer(v_sec, v_uSec);
   }
@@ -87,4 +87,29 @@ char* copyString(char* vp_string)
   char* t_newString = (char*)malloc((size_t)t_newStringLength);
   memcpy(t_newString, vp_string, (size_t)t_newStringLength);
   return(t_newString);
+}
+
+struct s_linkList* linkListCreate(void* tp_data)
+{
+  struct s_linkList* tp_linkList = (struct s_linkList*)malloc(sizeof(struct s_linkList));
+  memset(tp_linkList, 0, sizeof(struct s_linkList));
+  tp_linkList->mp_data = tp_data;
+  return(tp_linkList);
+}
+
+void linkListAppend(struct s_linkList** vp_head, struct s_linkList* vp_node)
+{
+  struct s_linkList* tp_node = *vp_head;
+  if (tp_node == NULL)
+  {
+    *vp_head = vp_node;
+  }
+  else
+  {
+    while (tp_node->mp_next != NULL)
+    {
+      tp_node = tp_node->mp_next;
+    }
+    tp_node->mp_next = vp_node;
+  }
 }

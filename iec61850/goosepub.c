@@ -9,6 +9,19 @@
 
 //  function
 
+void gooseCmdReg(void** vp_gooseDataModify)
+{
+  for (int t_i = 0; t_i < DEF_gooseCmdType; t_i++)
+  {
+    vp_gooseDataModify[t_i] = NULL;
+  }
+  vp_gooseDataModify[1] = goosePublisherSetEnable;
+  vp_gooseDataModify[101] = goosePublisherSetGoID;
+  vp_gooseDataModify[102] = goosePublisherSetGoCbRef;
+  vp_gooseDataModify[103] = goosePublisherSetDataSetRef;
+  vp_gooseDataModify[104] = goosePublisherSetDataSetEntriesInt;
+}
+
 void goosePublisherSetEnable(struct s_goosePublisher* vp_gooseData, char* vp_goID, int v_length)
 {
   vp_gooseData->m_enable = v_length;
@@ -29,16 +42,41 @@ void goosePublisherSetDataSetRef(struct s_goosePublisher* vp_gooseData, char* vp
   vp_gooseData->m_dataSetRef = copyString(vp_dataSetRef);
 }
 
+void goosePublisherSetDataSetEntriesInt(struct s_goosePublisher* vp_gooseData, char* vp_dataSetRef, int v_length)
+{
+  struct s_dataSetNode* tp_node = (struct s_dataSetNode*)malloc(sizeof(struct s_dataSetNode));
+  int* tp_i = (int*)malloc(sizeof(int));
+  *tp_i = v_length;
+  tp_node->m_data = tp_i;
+  tp_node->m_type = (char)0x85;
+  tp_node->m_length = DEF_actulLength(v_length);
+  struct s_linkList* tp_linkList = linkListCreate(tp_node);
+  linkListAppend(&vp_gooseData->mp_dataSetHead, tp_linkList);
+  vp_gooseData->m_numDataSetEntries++;
+}
+
 void stNumMod(struct s_goosePublisher* vp_gooseData)
 {
-  vp_gooseData->m_stNum = (vp_gooseData->m_stNum == 0xFFFFFFFF) ? 1 : vp_gooseData->m_stNum + 1;
+  vp_gooseData->m_stNum = ((vp_gooseData->m_stNum == 0xFFFFFFFF) ? 1 : vp_gooseData->m_stNum + 1);
   vp_gooseData->m_sqNum = 0;
   getDateTime(&vp_gooseData->m_dateTime);
+  vp_gooseData->m_dateTime.tv_usec *= 1000;
+  char t_ch = 0;
+  char* tp_octet = (char*)&vp_gooseData->m_dateTime;
+  for (int t_i = 0; t_i <= 4; t_i += 4) //  endian
+  {
+    t_ch = *(tp_octet + t_i);
+    *(tp_octet + t_i) = *(tp_octet + t_i + 3);
+    *(tp_octet + t_i + 3) = t_ch;
+    t_ch = *(tp_octet + t_i + 1);
+    *(tp_octet + t_i + 1) = *(tp_octet + t_i + 2);
+    *(tp_octet + t_i + 2) = t_ch;
+  }
 }
 
 void sqNumMod(struct s_goosePublisher* vp_gooseData)
 {
-  vp_gooseData->m_sqNum = (vp_gooseData->m_sqNum == 0xFFFFFFFF) ? 1 : vp_gooseData->m_sqNum + 1;
+  vp_gooseData->m_sqNum = ((vp_gooseData->m_sqNum == 0xFFFFFFFF) ? 1 : vp_gooseData->m_sqNum + 1);
 }
 
 void gooseBufferPrepare(struct s_goosePublisher* vp_gooseData, struct s_gooseAndSvThreadData* vp_gooseThreadData)
@@ -53,14 +91,7 @@ void gooseBufferPrepare(struct s_goosePublisher* vp_gooseData, struct s_gooseAnd
   vp_gooseData->mp_buffer = (char*)malloc(DEF_maxFrameLen);
   memset(vp_gooseData->mp_buffer, 0, DEF_maxFrameLen);
   vp_gooseData->m_frameInterval = DEF_gooseDefaultFrameInterval;
-  vp_gooseData->m_lastTimerCount = 0;
-  vp_gooseData->m_enable = 0;
-  vp_gooseData->m_length = 0;
-  vp_gooseData->m_stNum = 0;
-  vp_gooseData->m_sqNum = 0;
   vp_gooseData->m_confRev = 1;
-  vp_gooseData->m_test = 0;
-  vp_gooseData->m_needsCommission = 0;
 }
 
 struct s_goosePublisher* goosePubCreate(struct s_gooseAndSvThreadData* vp_gooseThreadData)
@@ -71,94 +102,118 @@ struct s_goosePublisher* goosePubCreate(struct s_gooseAndSvThreadData* vp_gooseT
   return(tp_gooseData);
 }
 
+void gooseDataSetEntriesDestory(struct s_linkList* vp_dataSetHead)
+{
+  struct s_linkList* tp_node = vp_dataSetHead;
+  struct s_linkList* tp_waitFree = NULL;
+  while (tp_node != NULL)
+  {
+    tp_waitFree = tp_node;
+    tp_node = tp_node->mp_next;
+    free(tp_waitFree->mp_data);
+    free(tp_waitFree);
+  }
+}
+
 void goosePubDestory(struct s_goosePublisher* vp_gooseData)
 {
   (vp_gooseData->m_goID == NULL) ? vp_gooseData->m_goID = NULL : free(vp_gooseData->m_goID);
   (vp_gooseData->m_goCBRef == NULL) ? vp_gooseData->m_goCBRef = NULL : free(vp_gooseData->m_goCBRef);
   (vp_gooseData->m_dataSetRef == NULL) ? vp_gooseData->m_dataSetRef = NULL : free(vp_gooseData->m_dataSetRef);
+  gooseDataSetEntriesDestory(vp_gooseData->mp_dataSetHead);
   free(vp_gooseData->mp_buffer);
   free(vp_gooseData);
 }
 
-void goosePayloadCreate(struct s_goosePublisher* vp_gooseData)
+int gooseHeadCreate(struct s_goosePublisher* vp_gooseData)
 {
   int t_bufPos = 12;
   memcpy(vp_gooseData->mp_buffer, vp_gooseData->m_dAddr, DEF_macAddrLen);
   memcpy(vp_gooseData->mp_buffer + 6, vp_gooseData->m_sAddr, DEF_macAddrLen);
   /* Priority tag - IEEE 802.1Q */
-  //vp_gooseData->mp_buffer[t_bufPos++] = (char)0x81;
-  //vp_gooseData->mp_buffer[t_bufPos++] = (char)0x00;
-  //vp_gooseData->mp_buffer[t_bufPos++] = (char)((vp_gooseData->m_priority << 5) + (vp_gooseData->m_vlanId / 256)); /* Priority + VLAN-ID */
-  //vp_gooseData->mp_buffer[t_bufPos++] = (char)(vp_gooseData->m_vlanId % 256); /* VLAN-ID */
+  vp_gooseData->mp_buffer[t_bufPos++] = (char)0x81;
+  vp_gooseData->mp_buffer[t_bufPos++] = (char)0x00;
+  vp_gooseData->mp_buffer[t_bufPos++] = (char)((vp_gooseData->m_priority << 5) + (vp_gooseData->m_vlanId / 256)); /* Priority + VLAN-ID */
+  vp_gooseData->mp_buffer[t_bufPos++] = (char)(vp_gooseData->m_vlanId % 256); /* VLAN-ID */
   vp_gooseData->mp_buffer[t_bufPos++] = (char)0x88; /* EtherType GOOSE */
   vp_gooseData->mp_buffer[t_bufPos++] = (char)0xB8;
   vp_gooseData->mp_buffer[t_bufPos++] = DEF_gooseDefaultAppid / 256;
   vp_gooseData->mp_buffer[t_bufPos++] = DEF_gooseDefaultAppid % 256;
   vp_gooseData->m_lengthField = t_bufPos;
+  vp_gooseData->mp_buffer[t_bufPos++] = (char)0x00; //  PDU length
+  vp_gooseData->mp_buffer[t_bufPos++] = (char)0x00;
+  vp_gooseData->mp_buffer[t_bufPos++] = (char)0x00; //  PDU reserve
   vp_gooseData->mp_buffer[t_bufPos++] = (char)0x00;
   vp_gooseData->mp_buffer[t_bufPos++] = (char)0x00;
   vp_gooseData->mp_buffer[t_bufPos++] = (char)0x00;
-  vp_gooseData->mp_buffer[t_bufPos++] = (char)0x00;
-  vp_gooseData->mp_buffer[t_bufPos++] = (char)0x00;
-  vp_gooseData->mp_buffer[t_bufPos++] = (char)0x00;
-  vp_gooseData->m_payloadStart = t_bufPos;
-  //  step 1: pdu length calculate
-  int t_goosePduLength = 0;
-  t_goosePduLength += getTlvValueSize(vp_gooseData->m_goCBRef);
-  t_goosePduLength += getTlvValueSize(vp_gooseData->m_dataSetRef);
+  vp_gooseData->m_payloadStart = t_bufPos;  //  APDU pos
+  return(t_bufPos);
+}
+
+int gooseApduCalculate(struct s_goosePublisher* vp_gooseData)
+{
+  int t_gooseApduLength = 0;
+  t_gooseApduLength += getTlvValueSize(vp_gooseData->m_goCBRef);
+  t_gooseApduLength += getTlvValueSize(vp_gooseData->m_dataSetRef);
   if (vp_gooseData->m_goID != NULL)
   {
-    t_goosePduLength += getTlvValueSize(vp_gooseData->m_goID);
+    t_gooseApduLength += getTlvValueSize(vp_gooseData->m_goID);
   }
   else
   {
     vp_gooseData->m_goID = vp_gooseData->m_goCBRef;
-    t_goosePduLength += getTlvValueSize(vp_gooseData->m_goCBRef);
+    t_gooseApduLength += getTlvValueSize(vp_gooseData->m_goCBRef);
   }
-  t_goosePduLength += 2 + DEF_actulLength(vp_gooseData->m_timeAllowedToLive);
-  t_goosePduLength += 2 + 4 + 4; /* for datetime (UTCTIME) */
-  t_goosePduLength += 2 + DEF_actulLength(vp_gooseData->m_stNum);
-  t_goosePduLength += 2 + DEF_actulLength(vp_gooseData->m_sqNum);
-  t_goosePduLength += 2 + DEF_actulLength(vp_gooseData->m_test);
-  t_goosePduLength += 2 + DEF_actulLength(vp_gooseData->m_confRev);
-  t_goosePduLength += 2 + DEF_actulLength(vp_gooseData->m_needsCommission);
+  t_gooseApduLength += 2 + (DEF_actulLength(vp_gooseData->m_timeAllowedToLive));
+  t_gooseApduLength += 2 + 4 + 4; /* for datetime (UTCTIME) */
+  t_gooseApduLength += 2 + (DEF_actulLength(vp_gooseData->m_stNum));
+  t_gooseApduLength += 2 + (DEF_actulLength(vp_gooseData->m_sqNum));
+  t_gooseApduLength += 2 + (DEF_actulLength(vp_gooseData->m_test));
+  t_gooseApduLength += 2 + (DEF_actulLength(vp_gooseData->m_confRev));
+  t_gooseApduLength += 2 + (DEF_actulLength(vp_gooseData->m_needsCommission));
+  t_gooseApduLength += 2 + (DEF_actulLength(vp_gooseData->m_numDataSetEntries));
   //  to be do...
-  vp_gooseData->mp_buffer[vp_gooseData->m_lengthField] = (char)((t_goosePduLength + 8) / 256);
-  vp_gooseData->mp_buffer[vp_gooseData->m_lengthField + 1] = (char)((t_goosePduLength + 8) % 256);
-  //  step 2: pdu encode
-  /* Encode GOOSE PDU */
-  int t_gooseApduLength = t_goosePduLength - 8;
-  t_bufPos = 0;
-  char* t_buff = vp_gooseData->mp_buffer+vp_gooseData->m_payloadStart;
-  t_bufPos = setGooseApduLength((char)0x61, t_gooseApduLength, t_buff, t_bufPos);
-  /* Encode gocbRef */
-  t_bufPos = setGooseTlvString((char)0x80, vp_gooseData->m_goCBRef, t_buff, t_bufPos);
-  /* Encode timeAllowedToLive */
-  t_bufPos = setGooseTlvInt((char)0x81, vp_gooseData->m_timeAllowedToLive, t_buff, t_bufPos);
-  /* Encode datSet reference */
-  t_bufPos = setGooseTlvString((char)0x82, vp_gooseData->m_dataSetRef, t_buff, t_bufPos);
-  /* Encode goID */
-  t_bufPos = setGooseTlvString((char)0x83, vp_gooseData->m_goID, t_buff, t_bufPos);
-  /* Encode t */
-  t_bufPos = setGooseTlvOctet((char)0x84, (char*)&vp_gooseData->m_dateTime, 8, t_buff, t_bufPos);
-  /* Encode stNum */
-  t_bufPos = setGooseTlvInt((char)0x85, vp_gooseData->m_stNum, t_buff, t_bufPos);
-  /* Encode sqNum */
-  t_bufPos = setGooseTlvInt((char)0x86, vp_gooseData->m_sqNum, t_buff, t_bufPos);
-  /* Encode test */
-  t_bufPos = setGooseTlvBoolean((char)0x87, vp_gooseData->m_test, t_buff, t_bufPos);
-  /* Encode confRef */
-  t_bufPos = setGooseTlvInt((char)0x88, vp_gooseData->m_confRev, t_buff, t_bufPos);
-  /* Encode ndsCom */
-  t_bufPos = setGooseTlvBoolean((char)0x89, vp_gooseData->m_needsCommission, t_buff, t_bufPos);
-  /* Encode numDatSetEntries */
 
-  vp_gooseData->m_length = t_bufPos;
+  int t_pduLen = t_gooseApduLength + (vp_gooseData->m_payloadStart - vp_gooseData->m_lengthField);
+  vp_gooseData->mp_buffer[vp_gooseData->m_lengthField] = (char)(t_pduLen / 256);
+  vp_gooseData->mp_buffer[vp_gooseData->m_lengthField + 1] = (char)(t_pduLen % 256);
+  return(t_gooseApduLength);
+}
+
+int goosePduEncode(struct s_goosePublisher* vp_gooseData, int v_gooseApduLength)
+{
+  int t_bufPos = 0;
+  char* t_buff = vp_gooseData->mp_buffer + vp_gooseData->m_payloadStart;
+  t_bufPos = setGooseApduLength((char)0x61, v_gooseApduLength, t_buff, t_bufPos);
+  t_bufPos = setGooseTlvString((char)0x80, vp_gooseData->m_goCBRef, t_buff, t_bufPos);
+  t_bufPos = setGooseTlvInt((char)0x81, vp_gooseData->m_timeAllowedToLive, t_buff, t_bufPos); //  endian
+  t_bufPos = setGooseTlvString((char)0x82, vp_gooseData->m_dataSetRef, t_buff, t_bufPos);
+  t_bufPos = setGooseTlvString((char)0x83, vp_gooseData->m_goID, t_buff, t_bufPos);
+  t_bufPos = setGooseTlvOctet((char)0x84, (char*)&vp_gooseData->m_dateTime, 8, t_buff, t_bufPos); //  endian
+  t_bufPos = setGooseTlvInt((char)0x85, vp_gooseData->m_stNum, t_buff, t_bufPos);  //  endian
+  vp_gooseData->m_sqNumPos = vp_gooseData->m_payloadStart + t_bufPos;
+  t_bufPos = setGooseTlvInt((char)0x86, vp_gooseData->m_sqNum, t_buff, t_bufPos);  //  endian
+  t_bufPos = setGooseTlvBoolean((char)0x87, vp_gooseData->m_test, t_buff, t_bufPos);
+  t_bufPos = setGooseTlvInt((char)0x88, vp_gooseData->m_confRev, t_buff, t_bufPos);  //  endian
+  t_bufPos = setGooseTlvBoolean((char)0x89, vp_gooseData->m_needsCommission, t_buff, t_bufPos);
+  t_bufPos = setGooseTlvInt((char)0x8a, vp_gooseData->m_numDataSetEntries, t_buff, t_bufPos);  //  endian
+  //  to be do...
+
+  return(t_bufPos);
+}
+
+int goosePayloadCreate(struct s_goosePublisher* vp_gooseData)
+{
+  gooseHeadCreate(vp_gooseData);
+  int t_gooseApduLength = gooseApduCalculate(vp_gooseData);
+  int t_bufPos = goosePduEncode(vp_gooseData, t_gooseApduLength);
+  vp_gooseData->m_length = vp_gooseData->m_payloadStart + t_bufPos;
+  return(vp_gooseData->m_length);
 }
 
 int setGooseTlvLengthValue(int v_length, char* vp_buffer, int v_bufPos)
 {
-  if (v_length < 128) 
+  if (v_length < 128)
   {
     vp_buffer[v_bufPos++] = (char)v_length;
   }
@@ -167,7 +222,7 @@ int setGooseTlvLengthValue(int v_length, char* vp_buffer, int v_bufPos)
     vp_buffer[v_bufPos++] = (char)0x81;
     vp_buffer[v_bufPos++] = (char)v_length;
   }
-  else 
+  else
   {
     vp_buffer[v_bufPos++] = (char)0x82;
     vp_buffer[v_bufPos++] = (char)(v_length / 256);
@@ -206,7 +261,7 @@ int getTlvIntArrayLength(char* vp_integer, int v_originalSize)
 {
   char* t_integerEnd = vp_integer + v_originalSize - 1;
   char* t_bytePosition;
-  for (t_bytePosition = vp_integer; t_bytePosition < t_integerEnd; t_bytePosition++) 
+  for (t_bytePosition = vp_integer; t_bytePosition < t_integerEnd; t_bytePosition++)
   {
     if (t_bytePosition[0] == 0x00)
     {
@@ -233,18 +288,18 @@ int getTlvIntArrayLength(char* vp_integer, int v_originalSize)
       t_bytePosition++;
     }
   }
- return(t_newSize);
+  return(t_newSize);
 }
 
 int setGooseTlvInt(char v_tag, uint32_t v_value, char* vp_buffer, int v_bufPos)
 {
-  char* t_valueArray = (char*)&v_value;
-  char t_valueBuffer[5];
-  t_valueBuffer[0] = 0;
   int t_i = 0;
-  for (t_i = 0; t_i < 4; t_i++)
+  char* t_valueArray = (char*)(&v_value);
+  char t_valueBuffer[sizeof(int) + 1] = { 0 };
+  for (t_i = 0; t_i < sizeof(int); t_i++)
   {
-    t_valueBuffer[t_i + 1] = t_valueArray[t_i];
+    //t_valueBuffer[t_i + 1] = *(t_valueArray + t_i); //  endian
+    t_valueBuffer[t_i + 1] = t_valueArray[(int)sizeof(int) - t_i - 1]; //  endian
   }
   int t_size = getTlvIntArrayLength(t_valueBuffer, 5);
   vp_buffer[v_bufPos++] = v_tag;
@@ -260,7 +315,7 @@ int setGooseTlvBoolean(char v_tag, int v_value, char* vp_buffer, int v_bufPos)
 {
   vp_buffer[v_bufPos++] = v_tag;
   vp_buffer[v_bufPos++] = 1;
-  vp_buffer[v_bufPos++] = (char)((v_value!=0x0) ? 0xff : 0x00);
+  vp_buffer[v_bufPos++] = (char)((v_value != 0x0) ? 0xff : 0x00);
   return(v_bufPos);
 }
 
@@ -269,53 +324,55 @@ int setGooseTlvOctet(char v_tag, char* vp_octet, int t_octetSize, char* vp_buffe
   vp_buffer[v_bufPos++] = v_tag;
   v_bufPos = setGooseTlvLengthValue(t_octetSize, vp_buffer, v_bufPos);
   int t_i = 0;
-  for (t_i = 0; t_i < t_octetSize; t_i++) 
+  for (t_i = 0; t_i < t_octetSize; t_i++)
   {
     vp_buffer[v_bufPos++] = vp_octet[t_i];
   }
   return(v_bufPos);
 }
 
-void gooseCmdReg(void** vp_gooseDataModify)
+void gooseDataUpdate(struct s_gooseAndSvThreadData* vp_gooseThreadData, struct s_goosePublisher* vp_goosePub)
 {
-  for (int t_i = 0; t_i < DEF_gooseCmdType; t_i++)
+  if (vp_gooseThreadData->m_cmd > 0 && g_gooseDataModify[vp_gooseThreadData->m_cmd] != NULL)
   {
-    vp_gooseDataModify[t_i] = NULL;
+    (g_gooseDataModify[vp_gooseThreadData->m_cmd])(vp_goosePub, vp_gooseThreadData->mp_value, vp_gooseThreadData->m_length);
+    vp_goosePub->m_length = 0;
+    vp_gooseThreadData->m_cmd = 0;
   }
-  vp_gooseDataModify[1] = goosePublisherSetEnable;
-  vp_gooseDataModify[101] = goosePublisherSetGoID;
-  vp_gooseDataModify[102] = goosePublisherSetGoCbRef;
-  vp_gooseDataModify[103] = goosePublisherSetDataSetRef;
+}
+
+void gooseFrameSend(struct s_gooseAndSvThreadData* vp_gooseThreadData, struct s_goosePublisher* vp_goosePub)
+{
+  //if ((*vp_gooseThreadData->mp_timerCount) > (vp_goosePub->m_lastTimerCount + vp_goosePub->m_frameInterval))
+  {
+    vp_goosePub->m_lastTimerCount = *vp_gooseThreadData->mp_timerCount;
+    sqNumMod(vp_goosePub);
+    goosePayloadCreate(vp_goosePub);
+    sendData(vp_gooseThreadData->mp_socket, vp_goosePub->mp_buffer, vp_goosePub->m_length);
+    sleep(1);
+  }
 }
 
 void gooseThreadRun(struct s_gooseAndSvThreadData* vp_gooseThreadData)
 {
-  struct s_goosePublisher* t_goosePub = goosePubCreate(vp_gooseThreadData);
-  void(*t_gooseDataModify[DEF_gooseCmdType])(struct s_goosePublisher*, void*, int);
-  gooseCmdReg((void**)(&t_gooseDataModify));
-  while (vp_gooseThreadData->m_running)
+  struct s_goosePublisher* tp_goosePub = goosePubCreate(vp_gooseThreadData);
+  gooseCmdReg((void**)(&g_gooseDataModify));
+  while (*vp_gooseThreadData->m_running)
   {
-    if (vp_gooseThreadData->m_cmd > 0 && t_gooseDataModify[vp_gooseThreadData->m_cmd] != NULL)
+    gooseDataUpdate(vp_gooseThreadData, tp_goosePub);
+    if (tp_goosePub->m_enable)
     {
-      t_gooseDataModify[vp_gooseThreadData->m_cmd](t_goosePub, vp_gooseThreadData->mp_value, vp_gooseThreadData->m_length);
-      t_goosePub->m_length = 0;
-      vp_gooseThreadData->m_cmd = 0;
-    }
-    if (t_goosePub->m_enable)
-    {
-      sqNumMod(t_goosePub);
-      if (t_goosePub->m_length == 0)
+      if (tp_goosePub->m_length == 0)
       {
-        stNumMod(t_goosePub);
-        goosePayloadCreate(t_goosePub);
+        stNumMod(tp_goosePub);
+        if (goosePayloadCreate(tp_goosePub) > DEF_maxFrameLen)
+        {
+          perror("The goose frame length big than DEF_maxFrameLen");
+          break;
+        }
       }
-      //if (*(vp_gooseThreadData->mp_timerCount) > (t_goosePub->m_lastTimerCount + t_goosePub->m_frameInterval))
-      {
-        //t_goosePub->m_lastTimerCount = *(vp_gooseThreadData->mp_timerCount);
-        sendData(vp_gooseThreadData->mp_socket, t_goosePub->mp_buffer, t_goosePub->m_length);
-      }
+      gooseFrameSend(vp_gooseThreadData, tp_goosePub);
     }
-    sleep(1);
   }
-  goosePubDestory(t_goosePub);
+  goosePubDestory(tp_goosePub);
 }

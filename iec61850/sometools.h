@@ -22,6 +22,12 @@
 
 //  struct
 
+struct s_linkList
+{
+  void* mp_data;
+  struct s_linkList* mp_next;
+}__attribute__((aligned(1)));
+
 //  global
 
 long long g_timerCount;
@@ -41,8 +47,12 @@ void signalTimerHandler();
 
 void setTimer(int, int);
 
-void createSignal(int**,long long**,int, int);
+void createSignal(int**, long long**, int, int);
 
 char* copyString(char*);
+
+struct s_linkList* linkListCreate(void*);
+
+void linkListAppend(struct s_linkList**, struct s_linkList*);
 
 #endif
