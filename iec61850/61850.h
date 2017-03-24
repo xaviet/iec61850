@@ -16,13 +16,17 @@
 
 //  macro define
 
-#define DEF_actulLength(v_int) ((v_int)>0x00ffffff)?4:(((v_int)>0x0000ffff)?3:(((v_int)>0x000000ff)?2:1))
+#define DEF_dataSetTypeInteger 0x00000085
+
+#define DEF_actulLength(v_int) ((v_int) > 0x007fffff) ? 4 : (((v_int) > 0x00007fff) ? 3 : (((v_int) > 0x0000007f) ? 2 : 1))
+#define DEF_padLengthHead(v_int) (((v_int) > 0x0000007f) ? 1 : 0)
+#define DEF_modIntEndian(v_int) ((((v_int) & 0xff000000) >> 24) + (((v_int) & 0x00ff0000) >> 8) + (((v_int) & 0x0000ff00) << 8) + (((v_int) & 0x000000ff) << 24))
 
 //  struct
 
 struct s_dataSetNode
 {
-  char m_type;
+  unsigned char m_type;
   int m_length;
   void* m_data;
 }__attribute__((aligned(1)));
@@ -43,12 +47,12 @@ struct s_gooseAndSvThreadData
 
 //  function
 
-int getTlvLengthValue(int);
-
 int getTlvValueSize(const char*);
 
 int setTlvTotal(char, const char*, char*, int);
 
 int setTlvLength(int, char*, int);
+
+void setDataTimeToUtc(struct timeval*);
 
 #endif

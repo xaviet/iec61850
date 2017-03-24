@@ -9,29 +9,13 @@
 
 //  function
 
-int getTlvLengthValue(int length)
-{
-  if (length < 128)
-  {
-    return(1);
-  }
-  else if (length < 256)
-  {
-    return(2);
-  }
-  else
-  {
-    return (3);
-  }
-}
-
 int getTlvValueSize(const char* vp_tlvValue)
 {
   if (vp_tlvValue != NULL)
   {
     int t_size = 1;
     int t_length = (int)strlen(vp_tlvValue);
-    t_size += getTlvLengthValue(t_length);
+    t_size += DEF_actulLength(t_length);
     t_size += t_length;
     return (t_size);
   }
@@ -78,4 +62,20 @@ int setTlvLength(int v_length, char* vp_buffer, int v_bufPos)
     vp_buffer[v_bufPos++] = (char)(v_length % 256);
   }
   return(v_bufPos);
+}
+
+void setDataTimeToUtc(struct timeval* vp_time)
+{
+  vp_time->tv_usec *= 1000;
+  char t_ch = 0;
+  char* tp_octet = (char*)vp_time;
+  for (int t_i = 0; t_i <= 4; t_i += 4) //  endian
+  {
+    t_ch = *(tp_octet + t_i);
+    *(tp_octet + t_i) = *(tp_octet + t_i + 3);
+    *(tp_octet + t_i + 3) = t_ch;
+    t_ch = *(tp_octet + t_i + 1);
+    *(tp_octet + t_i + 1) = *(tp_octet + t_i + 2);
+    *(tp_octet + t_i + 2) = t_ch;
+  }
 }

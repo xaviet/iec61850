@@ -60,6 +60,7 @@ struct s_goosePublisher
   int m_needsCommission;
   uint32_t m_numDataSetEntries;
   struct s_linkList* mp_dataSetHead;
+  int m_dataSetLength;
   struct timeval m_dateTime; /* time when stNum is increased */
 }__attribute__((aligned(1)));
 
@@ -75,6 +76,10 @@ void sqNumMod(struct s_goosePublisher*);
 
 void goosePublisherSetEnable(struct s_goosePublisher*, char*, int);
 
+void goosePublisherSetAppid(struct s_goosePublisher*, char*, int);
+
+void goosePublisherSetVlanId(struct s_goosePublisher*, char*, int);
+
 void goosePublisherSetGoID(struct s_goosePublisher*, char*, int);
 
 void goosePublisherSetGoCbRef(struct s_goosePublisher*, char*, int);
@@ -88,6 +93,10 @@ void gooseBufferPrepare(struct s_goosePublisher*, struct s_gooseAndSvThreadData*
 int setGooseTlvLengthValue(int, char*, int);
 
 int setGooseApduLength(char, int, char*, int);
+
+int setGooseDataSetLength(char, int, char*, int);
+
+int setGooseDataSetList(struct s_linkList*, char*, int);
 
 int setGooseTlvString(char, char*, char*, int);
 

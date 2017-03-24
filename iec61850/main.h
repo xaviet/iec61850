@@ -65,17 +65,19 @@ struct s_appData* gp_appData;
 
 struct s_linkList* threadDataCreate();
 
-void gooseAndSvPubCreate();
+void gooseAndSvPubCreate(int, void*);
 
 void threadDataAppend(struct s_appData*, struct s_linkList*);
 
 void createAppData();
 
+void pubCreate(int);
+
 void destoryAppData(struct s_appData*);
 
-void work();
+void work(int);
 
-void test();
+void test(int);
 
 int main(int, char**);
 
