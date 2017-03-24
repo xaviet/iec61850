@@ -21,17 +21,21 @@
 
 //  macro define
 
+#define DEF_svDefaultFrameInterval 1
 #define DEF_svDefaultDMac {(char)0x01,(char)0x0c,(char)0xcd,(char)0x04,(char)0x00,(char)0x01}
 #define DEF_svDefaultPriority 4
 #define DEF_svDefaultVlanId 1
 #define DEF_svDefaultAppid 0x4001
-
+#define DEF_svCmdType 256
 //  struct
 
 struct s_svPublisher
 {
   char* mp_buffer;
   int m_frameInterval;
+  long long m_lastTimerCount;
+  int m_enable;
+  int m_length;
   char m_dAddr[DEF_macAddrLen];
   char m_sAddr[DEF_macAddrLen];
   char m_priority;
@@ -54,6 +58,12 @@ struct s_svPublisher
 
 //  global
 
+void(*g_svDataModify[DEF_svCmdType])(struct s_svPublisher*, void*, int);
+
 //  function
+
+void svFrameSend(struct s_gooseAndSvThreadData*, struct s_svPublisher*)£»
+
+void svThreadRun(struct s_gooseAndSvThreadData*);
 
 #endif

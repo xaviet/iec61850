@@ -86,6 +86,7 @@ void pubCreate(int v_i)
   for (int t_i = 1; t_i <= v_i; t_i++)
   {
     gooseAndSvPubCreate(t_i, gooseThreadRun);
+    gooseAndSvPubCreate(t_i, svThreadRun);
   }
 }
 void work(int v_i)

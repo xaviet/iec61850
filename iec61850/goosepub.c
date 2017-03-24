@@ -397,7 +397,6 @@ void gooseDataUpdate(struct s_gooseAndSvThreadData* vp_gooseThreadData, struct s
 
 void gooseFrameSend(struct s_gooseAndSvThreadData* vp_gooseThreadData, struct s_goosePublisher* vp_goosePub)
 {
-
   if (((*vp_gooseThreadData->mp_timerCount) > (vp_goosePub->m_lastTimerCount + vp_goosePub->m_frameInterval)) || (vp_goosePub->m_lastTimerCount == 0))
   {
     vp_goosePub->m_lastTimerCount = *vp_gooseThreadData->mp_timerCount;
