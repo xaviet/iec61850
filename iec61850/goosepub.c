@@ -152,7 +152,7 @@ int gooseHeadCreate(struct s_goosePublisher* vp_gooseData)
   return(t_bufPos);
 }
 
-int getAllDataLength(struct s_linkList* vp_dataSetHead)
+int getGooseAllDataLength(struct s_linkList* vp_dataSetHead)
 {
   int t_len = 0;
   struct s_linkList* tp_node = vp_dataSetHead;
@@ -195,7 +195,7 @@ int gooseApduCalculate(struct s_goosePublisher* vp_gooseData)
   t_gooseApduLength += 2 + (DEF_actulLength(vp_gooseData->m_confRev));
   t_gooseApduLength += 2 + (DEF_actulLength(vp_gooseData->m_needsCommission));
   t_gooseApduLength += 2 + (DEF_actulLength(vp_gooseData->m_numDataSetEntries));
-  vp_gooseData->m_dataSetLength = getAllDataLength(vp_gooseData->mp_dataSetHead);
+  vp_gooseData->m_dataSetLength = getGooseAllDataLength(vp_gooseData->mp_dataSetHead);
   t_gooseApduLength += 1 + (DEF_actulLength(vp_gooseData->m_dataSetLength)) + DEF_padLengthHead(vp_gooseData->m_dataSetLength);
   t_gooseApduLength += vp_gooseData->m_dataSetLength;
   //  to be do...

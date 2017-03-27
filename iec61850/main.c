@@ -61,10 +61,10 @@ void gooseAndSvPubMod(struct s_gooseAndSvThreadData* vp_threadData, int v_type, 
   vp_threadData->m_cmd = v_type;
 }
 
-void gooseAndSvPubCreate(int v_id, void* vp_gooseThreadRun)
+void gooseCreate(int v_id, void* vp_gooseThreadRun)
 {
   struct s_linkList* tp_threadDataLinkList = threadDataCreate();
-  printf("gooseAndSvPubCreate: %4d\n", ((struct s_gooseAndSvThreadData*)(tp_threadDataLinkList->mp_data))->m_index);
+  printf("goosePubCreate: %4d\n", ((struct s_gooseAndSvThreadData*)(tp_threadDataLinkList->mp_data))->m_index);
   threadDataAppend(gp_appData, tp_threadDataLinkList);
   createThread(vp_gooseThreadRun, tp_threadDataLinkList->mp_data);
   char t_string[128] = { 0 };
@@ -81,12 +81,23 @@ void gooseAndSvPubCreate(int v_id, void* vp_gooseThreadRun)
   gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 1, NULL, 1);
 }
 
+void svCreate(int v_id, void* vp_svThreadRun)
+{
+  struct s_linkList* tp_threadDataLinkList = threadDataCreate();
+  printf("svPubCreate: %4d\n", ((struct s_gooseAndSvThreadData*)(tp_threadDataLinkList->mp_data))->m_index);
+  threadDataAppend(gp_appData, tp_threadDataLinkList);
+  createThread(vp_svThreadRun, tp_threadDataLinkList->mp_data);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 101, NULL, 0x4000 + v_id);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 102, NULL, 0x4000 + v_id);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 1, NULL, 1);
+}
+
 void pubCreate(int v_i)
 {
   for (int t_i = 1; t_i <= v_i; t_i++)
   {
-    gooseAndSvPubCreate(t_i, gooseThreadRun);
-    gooseAndSvPubCreate(t_i, svThreadRun);
+    //gooseCreate(t_i, gooseThreadRun);
+    svCreate(t_i, svThreadRun);
   }
 }
 void work(int v_i)
@@ -99,11 +110,11 @@ void work(int v_i)
   }
 }
 
-#define DEF_test 0
+#define DEF_test 1
 
 int main(int argc, char** argv)
 {
-  int t_pubNum = 32;
+  int t_pubNum = 1;
   if (argc > 1)
   {
     sscanf(argv[1], "%d", &t_pubNum);

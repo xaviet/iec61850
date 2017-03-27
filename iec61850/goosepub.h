@@ -29,6 +29,8 @@
 #define DEF_gooseCmdType 256
 #define DEF_gooseTimeAllowedToLive 10000
 
+#define DEF_dataSetTypeInteger 0x00000085
+
 //  struct
 
 struct s_goosePublisher

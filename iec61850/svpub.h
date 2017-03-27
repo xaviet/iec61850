@@ -27,6 +27,9 @@
 #define DEF_svDefaultVlanId 1
 #define DEF_svDefaultAppid 0x4001
 #define DEF_svCmdType 256
+
+#define DEF_asdu 0x00000030
+
 //  struct
 
 struct s_svPublisher
@@ -45,6 +48,8 @@ struct s_svPublisher
   int m_payloadStart;
   char* m_id;
   char* m_dataSetRef; /* date set reference */
+  int m_numAsdu;
+  struct s_linkList* mp_asduHead;
   uint16_t m_smpCount; /* sample counter - reset by sync */
   uint32_t m_confRev; /* Configuration revision according to CB */
   char m_smpSynch; /* Synchronization status */
@@ -62,7 +67,31 @@ void(*g_svDataModify[DEF_svCmdType])(struct s_svPublisher*, void*, int);
 
 //  function
 
-void svFrameSend(struct s_gooseAndSvThreadData*, struct s_svPublisher*)£»
+void svCmdReg(void**);
+
+void svPublisherSetVlanId(struct s_svPublisher*, char*, int);
+
+void svPublisherSetAppid(struct s_svPublisher*, char*, int);
+
+void svPublisherSetEnable(struct s_svPublisher*, char*, int);
+
+void svPubDestory(struct s_svPublisher*);
+
+void svFrameSend(struct s_gooseAndSvThreadData*, struct s_svPublisher*);
+
+void svDataUpdate(struct s_gooseAndSvThreadData*, struct s_svPublisher*);
+
+void svBufferPrepare(struct s_svPublisher*, struct s_gooseAndSvThreadData*);
+
+struct s_svPublisher* svPubCreate(struct s_gooseAndSvThreadData*);
+
+int svHeadCreate(struct s_svPublisher*);
+
+int setsvApduLength(char, int, char*, int);
+
+int svPduEncode(struct s_svPublisher*, int);
+
+int svPayloadCreate(struct s_svPublisher*);
 
 void svThreadRun(struct s_gooseAndSvThreadData*);
 
