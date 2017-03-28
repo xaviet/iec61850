@@ -21,7 +21,13 @@
 
 //  macro define
 
-#define DEF_svDefaultFrameInterval 1
+#define DEF_svDataFileInfo 2048
+#define DEF_svDataFilePath "./data/"
+#define DEF_svDataFileExtNmae ".rec"
+#define DEF_svDataItemLen 8
+
+#define DEF_svDataNumber 144
+#define DEF_svDefaultFrameInterval 25
 #define DEF_svDefaultDMac {(char)0x01,(char)0x0c,(char)0xcd,(char)0x04,(char)0x00,(char)0x01}
 #define DEF_svDefaultPriority 4
 #define DEF_svDefaultVlanId 1
@@ -31,6 +37,20 @@
 #define DEF_asdu 0x00000030
 
 //  struct
+
+//type:A;id:IA_TF7;phase:A;unit:A;factorA:1.165048;factorB:0.000000;samplingRate:5760;samplingNumber:23040;
+struct s_svAsduNode
+{
+  char m_type[DEF_svDataItemLen];
+  char m_id[DEF_svDataItemLen];
+  char m_phase[DEF_svDataItemLen];
+  char m_unit[DEF_svDataItemLen];
+  float m_factorA;
+  float m_factorB;
+  int m_samplingRate;
+  long long m_samplingNumber;
+  int (*mp_data)[];
+};
 
 struct s_svPublisher
 {
@@ -69,11 +89,18 @@ void(*g_svDataModify[DEF_svCmdType])(struct s_svPublisher*, void*, int);
 
 void svCmdReg(void**);
 
+
+void svPublisherSetAsdu(struct s_svPublisher*, char*, int);
+
 void svPublisherSetVlanId(struct s_svPublisher*, char*, int);
 
 void svPublisherSetAppid(struct s_svPublisher*, char*, int);
 
 void svPublisherSetEnable(struct s_svPublisher*, char*, int);
+
+void asduListParse(struct s_svPublisher*,char*);
+
+void svDataAsduListDestory(struct s_linkList*);
 
 void svPubDestory(struct s_svPublisher*);
 

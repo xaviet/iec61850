@@ -89,6 +89,16 @@ char* copyString(char* vp_string)
   return(t_newString);
 }
 
+void copyChars(char* vp_dest, char* vp_src, int v_len)
+{
+  while (v_len--)
+  {
+    *vp_dest= *vp_src;
+    vp_dest++;
+    vp_src++;
+  }
+}
+
 struct s_linkList* linkListCreate(void* tp_data)
 {
   struct s_linkList* tp_linkList = (struct s_linkList*)malloc(sizeof(struct s_linkList));

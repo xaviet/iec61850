@@ -228,7 +228,6 @@ int setGooseDataSetList(struct s_linkList* vp_dataSetHead, char* vp_buffer, int 
     }
     tp_node = tp_node->mp_next;
   }
-
   return(v_bufPos);
 }
 
@@ -430,7 +429,7 @@ void gooseThreadRun(struct s_gooseAndSvThreadData* vp_gooseThreadData)
       }
       gooseFrameSend(vp_gooseThreadData, tp_goosePub);
     }
-    sleep(0);
+    //sleep(0);
   }
   goosePubDestory(tp_goosePub);
 }

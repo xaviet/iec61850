@@ -18,16 +18,22 @@ void svCmdReg(void** vp_svDataModify)
   vp_svDataModify[1] = svPublisherSetEnable;
   vp_svDataModify[101] = svPublisherSetAppid;
   vp_svDataModify[102] = svPublisherSetVlanId;
+  vp_svDataModify[103] = svPublisherSetAsdu;
+}
+
+void svPublisherSetAsdu(struct s_svPublisher* vp_svData, char* vp_asduList, int v_length)
+{
+  asduListParse(vp_svData, vp_asduList);
 }
 
 void svPublisherSetVlanId(struct s_svPublisher* vp_svData, char* vp_goID, int v_length)
 {
-  vp_svData->m_vlanId = (uint16_t)(v_length & 0xffff);;
+  vp_svData->m_vlanId = (uint16_t)(v_length & 0xffff);
 }
 
 void svPublisherSetAppid(struct s_svPublisher* vp_svData, char* vp_goID, int v_length)
 {
-  vp_svData->m_appId = (uint16_t)(v_length & 0xffff);;
+  vp_svData->m_appId = (uint16_t)(v_length & 0xffff);
 }
 
 void svPublisherSetEnable(struct s_svPublisher* vp_svData, char* vp_goID, int v_length)
@@ -35,10 +41,70 @@ void svPublisherSetEnable(struct s_svPublisher* vp_svData, char* vp_goID, int v_
   vp_svData->m_enable = v_length;
 }
 
+struct s_svAsduNode* setAsduNode(char* vp_path)
+{
+  struct s_svAsduNode* tp_node = (struct s_svAsduNode*)malloc(sizeof(struct s_svAsduNode));
+  memset(tp_node, 0, sizeof(struct s_svAsduNode));
+  FILE* t_fd = fopen(vp_path, "r");
+  char t_buf[DEF_svDataFileInfo] = { 0 };
+  if (t_fd)
+  {
+    char* t_buff = NULL;
+    fgets(t_buf, DEF_svDataFileInfo, t_fd);
+
+    fclose(t_fd);
+  }
+  else
+  {
+    perror("file open fault");
+  }
+  return(tp_node);
+}
+
+void setSvAsduList(struct s_svPublisher* vp_svData, char* vp_fileName)
+{
+  char t_path[DEF_svDataFileInfo] = "";
+  sprintf(t_path, "%s%s%s", DEF_svDataFilePath, vp_fileName, DEF_svDataFileExtNmae);
+  struct s_linkList* tp_linkList = linkListCreate(setAsduNode(t_path));
+  linkListAppend(&vp_svData->mp_asduHead, tp_linkList);
+  vp_svData->m_numAsdu++;
+}
+
+void asduListParse(struct s_svPublisher* vp_svData, char* vp_asduList)
+{
+  char t_fileName[DEF_svDataItemLen] = "";
+  char* t_chBegin = vp_asduList;
+  char* t_chEnd = vp_asduList;
+  t_chEnd = strchr(t_chBegin, ';');
+  while (t_chEnd)
+  {
+    copyChars(t_fileName, t_chBegin, t_chEnd- t_chBegin);
+    t_chBegin = t_chEnd + 1;
+    t_chEnd = strchr(t_chBegin, ';');
+    setSvAsduList(vp_svData, t_fileName);
+    memset(t_fileName, 0, DEF_svDataItemLen);
+  }
+}
+
+void svDataAsduListDestory(struct s_linkList* vp_dataSetHead)
+{
+  struct s_linkList* tp_node = vp_dataSetHead;
+  struct s_linkList* tp_waitFree = NULL;
+  while (tp_node != NULL)
+  {
+    tp_waitFree = tp_node;
+    tp_node = tp_node->mp_next;
+    free(((struct s_svAsduNode*)(tp_waitFree->mp_data))->mp_data);
+    free(tp_waitFree->mp_data);
+    free(tp_waitFree);
+  }
+}
+
 void svPubDestory(struct s_svPublisher* vp_svPub)
 {
     (vp_svPub->m_id == NULL) ? vp_svPub->m_id = NULL : free(vp_svPub->m_id);
     (vp_svPub->m_dataSetRef == NULL) ? vp_svPub->m_dataSetRef = NULL : free(vp_svPub->m_dataSetRef);
+    svDataAsduListDestory(vp_svPub->mp_asduHead);
     printf("service appid#%-4d stop\n", vp_svPub->m_appId);
     free(vp_svPub->mp_buffer);
     free(vp_svPub);
@@ -111,6 +177,8 @@ int svHeadCreate(struct s_svPublisher* vp_svData)
   vp_svData->mp_buffer[t_bufPos++] = (char)0x00;
   vp_svData->mp_buffer[t_bufPos++] = (char)0x00;
   vp_svData->m_payloadStart = t_bufPos;  //  APDU pos
+  //  to be do...
+
   return(t_bufPos);
 }
 

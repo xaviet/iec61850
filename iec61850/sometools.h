@@ -51,6 +51,8 @@ void createSignal(int**, long long**, int, int);
 
 char* copyString(char*);
 
+void copyChars(char*, char*, int);
+
 struct s_linkList* linkListCreate(void*);
 
 void linkListAppend(struct s_linkList**, struct s_linkList*);

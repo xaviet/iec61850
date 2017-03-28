@@ -67,7 +67,7 @@ struct s_linkList* threadDataCreate();
 
 void gooseCreate(int, void*);
 
-void svCreate(int, void*);
+void svCreate(int, void*, char*);
 
 void threadDataAppend(struct s_appData*, struct s_linkList*);
 
