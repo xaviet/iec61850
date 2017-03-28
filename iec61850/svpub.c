@@ -51,7 +51,18 @@ struct s_svAsduNode* setAsduNode(char* vp_path)
   {
     char* t_buff = NULL;
     fgets(t_buf, DEF_svDataFileInfo, t_fd);
+    if (strstr(t_buf, "type:A;"))
+    {
 
+    }
+    else if (strstr(t_buf, "type:D;"))
+    {
+
+    }
+    else
+    {
+      perror("file content error");
+    }
     fclose(t_fd);
   }
   else

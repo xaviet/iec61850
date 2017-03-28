@@ -95,13 +95,14 @@ void svCreate(int v_id, void* vp_svThreadRun, char* v_data)
 
 void pubCreate(int v_i)
 {
+  char t_dataList[DEF_svDataFileInfo] = "";
   for (int t_i = 1; t_i <= v_i; t_i++)
   {
     //gooseCreate(t_i, gooseThreadRun);
-    char t_dataList[DEF_svDataFileInfo] = "";
-    strcpy(t_dataList, "IA_G1;IB_G1;IC_G1");
+
+    //sprintf(t_dataList, "IA_G%d;", t_i);
+    sprintf(t_dataList, "IA_G%d;IB_G%d;IC_G%d;", t_i, t_i, t_i);
     svCreate(t_i, svThreadRun, t_dataList);
-    strcpy(t_dataList, "IA_G2;IB_G2;IC_G2");
   }
 }
 void work(int v_i)
