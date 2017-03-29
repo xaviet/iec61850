@@ -41,6 +41,31 @@ void svPublisherSetEnable(struct s_svPublisher* vp_svData, char* vp_goID, int v_
   vp_svData->m_enable = v_length;
 }
 
+void getAnalogValueInfo(struct s_svAsduNode* vp_node, char* vp_buf)
+{
+  sscanf(vp_buf, DEF_svDataFormat, vp_node->m_type, vp_node->m_id, vp_node->m_phase, vp_node->m_unit, &vp_node->m_factorA, &vp_node->m_factorB, &vp_node->m_samplingRate, &vp_node->m_samplingNumber);
+}
+
+void getAnalogValueData(struct s_svAsduNode* vp_node, FILE* v_fd)
+{
+  char t_data[DEF_svDataItemLen] = { 0 };
+  vp_node->mp_data = malloc((unsigned int)(sizeof(int)*vp_node->m_samplingNumber));
+  memset(vp_node->mp_data, 0, (unsigned int)(sizeof(int)*vp_node->m_samplingNumber));
+  int t_i = 0;
+  while (1)
+  {
+    fgets(t_data, DEF_svDataItemLen, v_fd);
+    if ((strlen(t_data) > 0) && (t_i < vp_node->m_samplingNumber))
+    {
+      sscanf(t_data, "%d", &(*vp_node->mp_data)[t_i++]);
+    }
+    else
+    {
+      break;
+    }
+  }
+}
+
 struct s_svAsduNode* setAsduNode(char* vp_path)
 {
   struct s_svAsduNode* tp_node = (struct s_svAsduNode*)malloc(sizeof(struct s_svAsduNode));
@@ -49,11 +74,11 @@ struct s_svAsduNode* setAsduNode(char* vp_path)
   char t_buf[DEF_svDataFileInfo] = { 0 };
   if (t_fd)
   {
-    char* t_buff = NULL;
     fgets(t_buf, DEF_svDataFileInfo, t_fd);
     if (strstr(t_buf, "type:A;"))
     {
-
+      getAnalogValueInfo(tp_node, t_buf);
+      getAnalogValueData(tp_node, t_fd);
     }
     else if (strstr(t_buf, "type:D;"))
     {
@@ -155,7 +180,7 @@ void svBufferPrepare(struct s_svPublisher* vp_svData, struct s_gooseAndSvThreadD
   vp_svData->m_appId = DEF_svDefaultAppid;
   vp_svData->mp_buffer = (char*)malloc(DEF_maxFrameLen);
   memset(vp_svData->mp_buffer, 0, DEF_maxFrameLen);
-  vp_svData->m_frameInterval = DEF_svDefaultFrameInterval;
+  vp_svData->m_frameInterval = DEF_svDefaultIntervalPerFrame;
 }
 
 struct s_svPublisher* svPubCreate(struct s_gooseAndSvThreadData* vp_svThreadData)
@@ -188,24 +213,17 @@ int svHeadCreate(struct s_svPublisher* vp_svData)
   vp_svData->mp_buffer[t_bufPos++] = (char)0x00;
   vp_svData->mp_buffer[t_bufPos++] = (char)0x00;
   vp_svData->m_payloadStart = t_bufPos;  //  APDU pos
-  //  to be do...
-
   return(t_bufPos);
 }
 
-int setsvApduLength(char v_tag, int v_length, char* vp_buffer, int v_bufPos)
+int setSvApduLength(char v_tag, int v_length, char* vp_buffer, int v_bufPos)
 {
   return(setGooseApduLength(v_tag, v_length, vp_buffer, v_bufPos));
 }
 
-int svPduEncode(struct s_svPublisher* vp_svData, int v_svApduLength)
+int setSvApduTlvInt(char v_tag, int v_length, char* vp_buffer, int v_bufPos)
 {
-  int t_bufPos = 0;
-  char* t_buff = vp_svData->mp_buffer + vp_svData->m_payloadStart;
-  t_bufPos = setsvApduLength((char)0x60, v_svApduLength, t_buff, t_bufPos);
-  //  to be do...
-
-  return(t_bufPos);
+  return(setGooseTlvInt(v_tag, (unsigned int)v_length, vp_buffer, v_bufPos));
 }
 
 int getSvAllDataLength(struct s_linkList* vp_dataSetHead)
@@ -244,14 +262,26 @@ int svApduCalculate(struct s_svPublisher* vp_svData)
   {
     t_svApduLength += 4; /* for smpRate */
   }
-  vp_svData->m_numAsdu = getSvAllDataLength(vp_svData->mp_asduHead);
   t_svApduLength += 2 + (DEF_actulLength(vp_svData->m_numAsdu));
   //  to be do...
 
-  int t_pduLen = t_svApduLength + (vp_svData->m_payloadStart - vp_svData->m_lengthField);
+  int t_pduLen = t_svApduLength + 8;
+  t_pduLen += 2 + (DEF_pduLength(t_pduLen));
   vp_svData->mp_buffer[vp_svData->m_lengthField] = (char)(t_pduLen / 256);
   vp_svData->mp_buffer[vp_svData->m_lengthField + 1] = (char)(t_pduLen % 256);
   return(t_svApduLength);
+}
+
+int svPduEncode(struct s_svPublisher* vp_svData, int v_svApduLength)
+{
+  int t_bufPos = 0;
+  char* t_buff = vp_svData->mp_buffer + vp_svData->m_payloadStart;
+  t_bufPos = setSvApduLength((char)0x60, v_svApduLength, t_buff, t_bufPos);
+  t_bufPos = setSvApduTlvInt((char)0x80, vp_svData->m_numAsdu, t_buff, t_bufPos);
+  t_bufPos = setSvApduLength((char)0x82, vp_svData->m_asduLength, t_buff, t_bufPos);
+  //  to be do...
+
+  return(t_bufPos);
 }
 
 int svPayloadCreate(struct s_svPublisher* vp_svData)

@@ -200,10 +200,35 @@ int gooseApduCalculate(struct s_goosePublisher* vp_gooseData)
   t_gooseApduLength += vp_gooseData->m_dataSetLength;
   //  to be do...
 
-  int t_pduLen = t_gooseApduLength + (vp_gooseData->m_payloadStart - vp_gooseData->m_lengthField);
+  int t_pduLen = t_gooseApduLength + 8;
+  t_pduLen += 2 + (DEF_pduLength(t_pduLen));
   vp_gooseData->mp_buffer[vp_gooseData->m_lengthField] = (char)(t_pduLen / 256);
   vp_gooseData->mp_buffer[vp_gooseData->m_lengthField + 1] = (char)(t_pduLen % 256);
   return(t_gooseApduLength);
+}
+
+int goosePduEncode(struct s_goosePublisher* vp_gooseData, int v_gooseApduLength)
+{
+  int t_bufPos = 0;
+  char* t_buff = vp_gooseData->mp_buffer + vp_gooseData->m_payloadStart;
+  t_bufPos = setGooseApduLength((char)0x61, v_gooseApduLength, t_buff, t_bufPos);
+  t_bufPos = setGooseTlvString((char)0x80, vp_gooseData->m_goCBRef, t_buff, t_bufPos);
+  t_bufPos = setGooseTlvInt((char)0x81, vp_gooseData->m_timeAllowedToLive, t_buff, t_bufPos); //  endian
+  t_bufPos = setGooseTlvString((char)0x82, vp_gooseData->m_dataSetRef, t_buff, t_bufPos);
+  t_bufPos = setGooseTlvString((char)0x83, vp_gooseData->m_goID, t_buff, t_bufPos);
+  t_bufPos = setGooseTlvOctet((char)0x84, (char*)&vp_gooseData->m_dateTime, 8, t_buff, t_bufPos); //  endian
+  t_bufPos = setGooseTlvInt((char)0x85, vp_gooseData->m_stNum, t_buff, t_bufPos);  //  endian
+  vp_gooseData->m_sqNumPos = vp_gooseData->m_payloadStart + t_bufPos;
+  t_bufPos = setGooseTlvInt((char)0x86, vp_gooseData->m_sqNum, t_buff, t_bufPos);  //  endian
+  t_bufPos = setGooseTlvBoolean((char)0x87, vp_gooseData->m_test, t_buff, t_bufPos);
+  t_bufPos = setGooseTlvInt((char)0x88, vp_gooseData->m_confRev, t_buff, t_bufPos);  //  endian
+  t_bufPos = setGooseTlvBoolean((char)0x89, vp_gooseData->m_needsCommission, t_buff, t_bufPos);
+  t_bufPos = setGooseTlvInt((char)0x8a, vp_gooseData->m_numDataSetEntries, t_buff, t_bufPos);  //  endian
+  t_bufPos = setGooseDataSetLength((char)0xab, vp_gooseData->m_dataSetLength, t_buff, t_bufPos);  //  endian
+  t_bufPos = setGooseDataSetList(vp_gooseData->mp_dataSetHead, t_buff, t_bufPos);
+  //  to be do...
+
+  return(t_bufPos);
 }
 
 int setGooseDataSetLength(char v_tag, int v_length, char* vp_buffer, int v_bufPos)
@@ -229,30 +254,6 @@ int setGooseDataSetList(struct s_linkList* vp_dataSetHead, char* vp_buffer, int 
     tp_node = tp_node->mp_next;
   }
   return(v_bufPos);
-}
-
-int goosePduEncode(struct s_goosePublisher* vp_gooseData, int v_gooseApduLength)
-{
-  int t_bufPos = 0;
-  char* t_buff = vp_gooseData->mp_buffer + vp_gooseData->m_payloadStart;
-  t_bufPos = setGooseApduLength((char)0x61, v_gooseApduLength, t_buff, t_bufPos);
-  t_bufPos = setGooseTlvString((char)0x80, vp_gooseData->m_goCBRef, t_buff, t_bufPos);
-  t_bufPos = setGooseTlvInt((char)0x81, vp_gooseData->m_timeAllowedToLive, t_buff, t_bufPos); //  endian
-  t_bufPos = setGooseTlvString((char)0x82, vp_gooseData->m_dataSetRef, t_buff, t_bufPos);
-  t_bufPos = setGooseTlvString((char)0x83, vp_gooseData->m_goID, t_buff, t_bufPos);
-  t_bufPos = setGooseTlvOctet((char)0x84, (char*)&vp_gooseData->m_dateTime, 8, t_buff, t_bufPos); //  endian
-  t_bufPos = setGooseTlvInt((char)0x85, vp_gooseData->m_stNum, t_buff, t_bufPos);  //  endian
-  vp_gooseData->m_sqNumPos = vp_gooseData->m_payloadStart + t_bufPos;
-  t_bufPos = setGooseTlvInt((char)0x86, vp_gooseData->m_sqNum, t_buff, t_bufPos);  //  endian
-  t_bufPos = setGooseTlvBoolean((char)0x87, vp_gooseData->m_test, t_buff, t_bufPos);
-  t_bufPos = setGooseTlvInt((char)0x88, vp_gooseData->m_confRev, t_buff, t_bufPos);  //  endian
-  t_bufPos = setGooseTlvBoolean((char)0x89, vp_gooseData->m_needsCommission, t_buff, t_bufPos);
-  t_bufPos = setGooseTlvInt((char)0x8a, vp_gooseData->m_numDataSetEntries, t_buff, t_bufPos);  //  endian
-  t_bufPos = setGooseDataSetLength((char)0xab, vp_gooseData->m_dataSetLength, t_buff, t_bufPos);  //  endian
-  t_bufPos = setGooseDataSetList(vp_gooseData->mp_dataSetHead, t_buff, t_bufPos);
-  //  to be do...
-
-  return(t_bufPos);
 }
 
 int goosePayloadCreate(struct s_goosePublisher* vp_gooseData)

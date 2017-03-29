@@ -98,8 +98,7 @@ void pubCreate(int v_i)
   char t_dataList[DEF_svDataFileInfo] = "";
   for (int t_i = 1; t_i <= v_i; t_i++)
   {
-    //gooseCreate(t_i, gooseThreadRun);
-
+    gooseCreate(t_i, gooseThreadRun);
     //sprintf(t_dataList, "IA_G%d;", t_i);
     sprintf(t_dataList, "IA_G%d;IB_G%d;IC_G%d;", t_i, t_i, t_i);
     svCreate(t_i, svThreadRun, t_dataList);

@@ -25,9 +25,10 @@
 #define DEF_svDataFilePath "./data/"
 #define DEF_svDataFileExtNmae ".rec"
 #define DEF_svDataItemLen 8
+#define DEF_svDataFormat "type:%[^;];id:%[^;];phase:%[^;];unit:%[^;];factorA:%f;factorB:%f;samplingRate:%d;samplingNumber:%lld;"
 
-#define DEF_svDataNumber 144
-#define DEF_svDefaultFrameInterval 25
+#define DEF_svDefaultDataNumberPerFrame 144
+#define DEF_svDefaultIntervalPerFrame 25
 #define DEF_svDefaultDMac {(char)0x01,(char)0x0c,(char)0xcd,(char)0x04,(char)0x00,(char)0x01}
 #define DEF_svDefaultPriority 4
 #define DEF_svDefaultVlanId 1
@@ -70,6 +71,7 @@ struct s_svPublisher
   char* m_dataSetRef; /* date set reference */
   int m_numAsdu;
   struct s_linkList* mp_asduHead;
+  int m_asduLength;
   uint16_t m_smpCount; /* sample counter - reset by sync */
   uint32_t m_confRev; /* Configuration revision according to CB */
   char m_smpSynch; /* Synchronization status */
@@ -114,7 +116,13 @@ struct s_svPublisher* svPubCreate(struct s_gooseAndSvThreadData*);
 
 int svHeadCreate(struct s_svPublisher*);
 
-int setsvApduLength(char, int, char*, int);
+struct s_svAsduNode* setAsduNode(char*);
+
+int setSvApduLength(char, int, char*, int);
+
+int setSvApduTlvInt(char, int, char*, int);
+
+void getAnalogValueInfo(struct s_svAsduNode*, char*);
 
 int svPduEncode(struct s_svPublisher*, int);
 
