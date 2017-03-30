@@ -43,21 +43,21 @@ void svPublisherSetEnable(struct s_svPublisher* vp_svData, char* vp_goID, int v_
 
 void getAnalogValueInfo(struct s_svAsduNode* vp_node, char* vp_buf)
 {
-  sscanf(vp_buf, DEF_svDataFormat, vp_node->m_type, vp_node->m_id, vp_node->m_phase, vp_node->m_unit, &vp_node->m_factorA, &vp_node->m_factorB, &vp_node->m_samplingRate, &vp_node->m_samplingNumber);
+  char t_buf[DEF_svDataFileInfo] = { 0 };
+  sscanf(vp_buf, DEF_svDataFormat, vp_node->m_type, t_buf, vp_node->m_phase, vp_node->m_unit, &vp_node->m_factorA, &vp_node->m_factorB, &vp_node->m_samplingRate, &vp_node->m_samplingNumber);
 }
 
-void getAnalogValueData(struct s_svAsduNode* vp_node, FILE* v_fd)
+void getAnalogValueData(struct s_svAsduNode* vp_node, FILE* v_fd, int v_channelNum, int v_index)
 {
   char t_data[DEF_svDataItemLen] = { 0 };
-  vp_node->mp_data = malloc((unsigned int)(sizeof(int)*vp_node->m_samplingNumber));
-  memset(vp_node->mp_data, 0, (unsigned int)(sizeof(int)*vp_node->m_samplingNumber));
-  int t_i = 0;
+  int t_i = v_index;
   while (1)
   {
     fgets(t_data, DEF_svDataItemLen, v_fd);
     if ((strlen(t_data) > 0) && (t_i < vp_node->m_samplingNumber))
     {
-      sscanf(t_data, "%d", &(*vp_node->mp_data)[t_i++]);
+      sscanf(t_data, "%d", &(*vp_node->mp_data)[t_i]);
+      t_i += v_channelNum;
     }
     else
     {
@@ -66,59 +66,73 @@ void getAnalogValueData(struct s_svAsduNode* vp_node, FILE* v_fd)
   }
 }
 
-struct s_svAsduNode* setAsduNode(char* vp_path)
+struct s_svAsduNode* setAsduNode(char* vp_fileName)
 {
   struct s_svAsduNode* tp_node = (struct s_svAsduNode*)malloc(sizeof(struct s_svAsduNode));
   memset(tp_node, 0, sizeof(struct s_svAsduNode));
-  FILE* t_fd = fopen(vp_path, "r");
+  strcpy(tp_node->m_id, vp_fileName);
+  strcat(vp_fileName, ",");
+  tp_node->m_channelNum = strCharCount(vp_fileName, ',');
+  char t_path[DEF_svDataFileInfo] = "";
+  char t_fileName[DEF_svDataFileInfo] = "";
+  char* t_chBegin = vp_fileName;
+  char* t_chEnd = NULL;
   char t_buf[DEF_svDataFileInfo] = { 0 };
-  if (t_fd)
+  unsigned int t_len = 0;
+  for (int t_i = 0; t_i < tp_node->m_channelNum; t_i++)
   {
+    t_chEnd = strchr(t_chBegin, ',');
+    copyChars(t_fileName, t_chBegin, t_chEnd - t_chBegin);
+    sprintf(t_path, "%s%s%s", DEF_svDataFilePath, t_fileName, DEF_svDataFileExtNmae);
+    FILE* t_fd = fopen(t_path, "r");
     fgets(t_buf, DEF_svDataFileInfo, t_fd);
     if (strstr(t_buf, "type:A;"))
     {
-      getAnalogValueInfo(tp_node, t_buf);
-      getAnalogValueData(tp_node, t_fd);
+      if (t_i == 0)
+      {
+        getAnalogValueInfo(tp_node, t_buf);
+        tp_node->m_confRev = 1;
+        tp_node->m_smpCount = 0;
+        tp_node->m_smpSynch = 1;
+        t_len = (unsigned int)(tp_node->m_samplingNumber*tp_node->m_channelNum * sizeof(int));
+        tp_node->mp_data = malloc(t_len);
+        memset(tp_node->mp_data, 0, t_len);
+      }
+      getAnalogValueData(tp_node, t_fd, tp_node->m_channelNum, t_i);
+      fclose(t_fd);
     }
     else if (strstr(t_buf, "type:D;"))
     {
-
     }
     else
     {
       perror("file content error");
     }
-    fclose(t_fd);
-  }
-  else
-  {
-    perror("file open fault");
+    t_chBegin = t_chEnd + 1;
   }
   return(tp_node);
 }
 
-void setSvAsduList(struct s_svPublisher* vp_svData, char* vp_fileName)
+void setAsduList(struct s_svPublisher* vp_svData, char* vp_fileName)
 {
-  char t_path[DEF_svDataFileInfo] = "";
-  sprintf(t_path, "%s%s%s", DEF_svDataFilePath, vp_fileName, DEF_svDataFileExtNmae);
-  struct s_linkList* tp_linkList = linkListCreate(setAsduNode(t_path));
+  struct s_linkList* tp_linkList = linkListCreate(setAsduNode(vp_fileName));
   linkListAppend(&vp_svData->mp_asduHead, tp_linkList);
   vp_svData->m_numAsdu++;
 }
 
 void asduListParse(struct s_svPublisher* vp_svData, char* vp_asduList)
 {
-  char t_fileName[DEF_svDataItemLen] = "";
+  char t_fileName[DEF_svDataFileInfo] = "";
   char* t_chBegin = vp_asduList;
   char* t_chEnd = vp_asduList;
   t_chEnd = strchr(t_chBegin, ';');
   while (t_chEnd)
   {
-    copyChars(t_fileName, t_chBegin, t_chEnd- t_chBegin);
+    copyChars(t_fileName, t_chBegin, t_chEnd - t_chBegin);
     t_chBegin = t_chEnd + 1;
     t_chEnd = strchr(t_chBegin, ';');
-    setSvAsduList(vp_svData, t_fileName);
-    memset(t_fileName, 0, DEF_svDataItemLen);
+    setAsduList(vp_svData, t_fileName);
+    memset(t_fileName, 0, DEF_svDataFileInfo);
   }
 }
 
@@ -138,12 +152,12 @@ void svDataAsduListDestory(struct s_linkList* vp_dataSetHead)
 
 void svPubDestory(struct s_svPublisher* vp_svPub)
 {
-    (vp_svPub->m_id == NULL) ? vp_svPub->m_id = NULL : free(vp_svPub->m_id);
-    (vp_svPub->m_dataSetRef == NULL) ? vp_svPub->m_dataSetRef = NULL : free(vp_svPub->m_dataSetRef);
-    svDataAsduListDestory(vp_svPub->mp_asduHead);
-    printf("service appid#%-4d stop\n", vp_svPub->m_appId);
-    free(vp_svPub->mp_buffer);
-    free(vp_svPub);
+  (vp_svPub->m_id == NULL) ? vp_svPub->m_id = NULL : free(vp_svPub->m_id);
+  (vp_svPub->m_dataSetRef == NULL) ? vp_svPub->m_dataSetRef = NULL : free(vp_svPub->m_dataSetRef);
+  svDataAsduListDestory(vp_svPub->mp_asduHead);
+  printf("service appid#%-4d stop\n", vp_svPub->m_appId);
+  free(vp_svPub->mp_buffer);
+  free(vp_svPub);
 }
 
 void svFrameSend(struct s_gooseAndSvThreadData* vp_svThreadData, struct s_svPublisher* vp_svPub)
@@ -160,7 +174,7 @@ void svFrameSend(struct s_gooseAndSvThreadData* vp_svThreadData, struct s_svPubl
   }
 }
 
-void svDataUpdate(struct s_gooseAndSvThreadData* vp_svThreadData , struct s_svPublisher* tp_svPub)
+void svDataUpdate(struct s_gooseAndSvThreadData* vp_svThreadData, struct s_svPublisher* tp_svPub)
 {
   if (vp_svThreadData->m_cmd > 0 && g_svDataModify[vp_svThreadData->m_cmd] != NULL)
   {
@@ -221,49 +235,99 @@ int setSvApduLength(char v_tag, int v_length, char* vp_buffer, int v_bufPos)
   return(setGooseApduLength(v_tag, v_length, vp_buffer, v_bufPos));
 }
 
+int setSvTlvString(char v_tag, char* vp_string, char* vp_buffer, int v_bufPos)
+{
+  return(setGooseTlvString(v_tag, vp_string, vp_buffer, v_bufPos));
+}
+
 int setSvApduTlvInt(char v_tag, int v_length, char* vp_buffer, int v_bufPos)
 {
   return(setGooseTlvInt(v_tag, (unsigned int)v_length, vp_buffer, v_bufPos));
 }
 
-int getSvAllDataLength(struct s_linkList* vp_dataSetHead)
+int setAsduInt(int v_intValue, char* vp_buff, int v_bufPos)
+{
+  vp_buff[v_bufPos++] = (char)(((unsigned int)v_intValue & 0xff000000) >> 24);
+  vp_buff[v_bufPos++] = (char)((v_intValue & 0x00ff0000) >> 16);
+  vp_buff[v_bufPos++] = (char)((v_intValue & 0x0000ff00) >> 8);
+  vp_buff[v_bufPos++] = (char)(v_intValue & 0x000000ff);
+  return(v_bufPos);
+}
+
+int setSvAsduData(struct s_svAsduNode* vp_asdu, char* vp_buff, int v_bufPos)
+{
+  v_bufPos = setSvApduLength((char)0x30, vp_asdu->m_length, vp_buff, v_bufPos);
+  v_bufPos = setSvTlvString((char)0x80, vp_asdu->m_id, vp_buff, v_bufPos);
+  vp_buff[v_bufPos++] = (char)0x82; //  smpCount
+  vp_buff[v_bufPos++] = (char)0x02;
+  vp_buff[v_bufPos++] = (char)(vp_asdu->m_smpCount / 256);
+  vp_buff[v_bufPos++] = (char)(vp_asdu->m_smpCount % 256);
+  vp_asdu->m_smpCount = ((vp_asdu->m_smpCount >= (vp_asdu->m_samplingRate - 1)) ? 0 : (vp_asdu->m_smpCount + 1));
+  vp_buff[v_bufPos++] = (char)0x83; //  confrev
+  vp_buff[v_bufPos++] = (char)0x04;
+  v_bufPos = setAsduInt(vp_asdu->m_confRev, vp_buff, v_bufPos);
+  vp_buff[v_bufPos++] = (char)0x85; //  smpsynch
+  vp_buff[v_bufPos++] = (char)0x01;
+  vp_buff[v_bufPos++] = (char)0x1;
+  vp_buff[v_bufPos++] = (char)0x86; //  smprate
+  vp_buff[v_bufPos++] = (char)0x02;
+  vp_buff[v_bufPos++] = (char)(vp_asdu->m_samplingRate / 256);
+  vp_buff[v_bufPos++] = (char)(vp_asdu->m_samplingRate % 256);
+  v_bufPos = setSvApduLength((char)0x87, vp_asdu->m_dataLength, vp_buff, v_bufPos);
+  for (int t_i = 0; t_i < vp_asdu->m_channelNum; t_i++)
+  {
+    v_bufPos = setAsduInt((*vp_asdu->mp_data)[vp_asdu->m_txPoint + t_i], vp_buff, v_bufPos);
+    v_bufPos = setAsduInt(0x0, vp_buff, v_bufPos);
+  }
+  vp_asdu->m_txPoint = ((vp_asdu->m_txPoint >= (vp_asdu->m_samplingNumber - 1)) ? 0 : (vp_asdu->m_smpCount + 3));
+  return(v_bufPos);
+}
+
+int setSvAsduList(struct s_linkList* vp_asduHead, char* vp_buff, int v_bufPos)
+{
+  struct s_linkList* tp_asdu = vp_asduHead;
+  while (tp_asdu)
+  {
+    v_bufPos = setSvAsduData((struct s_svAsduNode*)tp_asdu->mp_data, vp_buff, v_bufPos);
+    tp_asdu = tp_asdu->mp_next;
+  }
+  return(v_bufPos);
+}
+
+int getAsduNodeLength(struct s_svPublisher* vp_svData, struct s_svAsduNode* tp_node)
 {
   int t_len = 0;
-  struct s_linkList* tp_node = vp_dataSetHead;
-  struct s_dataSetNode* tp_data = NULL;
+  t_len += getTlvValueSize(tp_node->m_id);
+  t_len += 2 + 2; //  smpcnt
+  t_len += 2 + 4; //  confref
+  t_len += 2 + 1; //  smpsynch
+  t_len += 2 + 2; //  smprate
+  tp_node->m_dataLength = 8 * tp_node->m_channelNum;
+  t_len += 2 + DEF_actulLength(tp_node->m_dataLength) + tp_node->m_dataLength; //  data
+  return(t_len);
+}
+
+int getSvAsdulength(struct s_svPublisher* vp_svData)
+{
+  struct s_linkList* tp_node = vp_svData->mp_asduHead;
+  vp_svData->m_asduLength = 0;
   while (tp_node != NULL)
   {
-    tp_data = tp_node->mp_data;
-    switch ((unsigned int)tp_data->m_type)
-    {
-    case DEF_asdu:
-      break;
-    default:
-      break;
-    }
+    ((struct s_svAsduNode*)(tp_node->mp_data))->m_length = 0;
+    ((struct s_svAsduNode*)(tp_node->mp_data))->m_length += getAsduNodeLength(vp_svData, tp_node->mp_data);
+    vp_svData->m_asduLength += ((struct s_svAsduNode*)(tp_node->mp_data))->m_length;
     tp_node = tp_node->mp_next;
   }
-  return(t_len);
+  return(vp_svData->m_asduLength);
 }
 
 int svApduCalculate(struct s_svPublisher* vp_svData)
 {
   int t_svApduLength = 0;
-  if (vp_svData->m_hasDataSetName)
-  {
-    t_svApduLength += getTlvValueSize(vp_svData->m_dataSetRef);
-    t_svApduLength += 4 + 6 + 3 + 4; /* for smpCnt + confRev + smpSynch + smpMod */
-  }
-  if (vp_svData->m_hasRefreshTime)
-  {
-    t_svApduLength += 10; /* for refrTim */
-  }
-  if (vp_svData->m_hasSampleRate)
-  {
-    t_svApduLength += 4; /* for smpRate */
-  }
   t_svApduLength += 2 + (DEF_actulLength(vp_svData->m_numAsdu));
-  //  to be do...
+  vp_svData->m_asduLength = getSvAsdulength(vp_svData);
+  t_svApduLength += DEF_actulLength(vp_svData->m_asduLength) + vp_svData->m_asduLength;
+  //  to be continued...
 
   int t_pduLen = t_svApduLength + 8;
   t_pduLen += 2 + (DEF_pduLength(t_pduLen));
@@ -278,8 +342,9 @@ int svPduEncode(struct s_svPublisher* vp_svData, int v_svApduLength)
   char* t_buff = vp_svData->mp_buffer + vp_svData->m_payloadStart;
   t_bufPos = setSvApduLength((char)0x60, v_svApduLength, t_buff, t_bufPos);
   t_bufPos = setSvApduTlvInt((char)0x80, vp_svData->m_numAsdu, t_buff, t_bufPos);
-  t_bufPos = setSvApduLength((char)0x82, vp_svData->m_asduLength, t_buff, t_bufPos);
-  //  to be do...
+  t_bufPos = setSvApduLength((char)0xa2, vp_svData->m_asduLength, t_buff, t_bufPos);
+  t_bufPos = setSvAsduList(vp_svData->mp_asduHead, t_buff, t_bufPos);
+  //  to be continued...
 
   return(t_bufPos);
 }

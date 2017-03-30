@@ -88,7 +88,7 @@ void svCreate(int v_id, void* vp_svThreadRun, char* v_data)
   threadDataAppend(gp_appData, tp_threadDataLinkList);
   createThread(vp_svThreadRun, tp_threadDataLinkList->mp_data);
   gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 101, NULL, 0x4000 + v_id);
-  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 102, NULL, 0x4000 + v_id);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 102, NULL, 4000 + v_id);
   gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 103, v_data, 0);
   gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 1, NULL, 1);
 }
@@ -100,7 +100,7 @@ void pubCreate(int v_i)
   {
     gooseCreate(t_i, gooseThreadRun);
     //sprintf(t_dataList, "IA_G%d;", t_i);
-    sprintf(t_dataList, "IA_G%d;IB_G%d;IC_G%d;", t_i, t_i, t_i);
+    sprintf(t_dataList, "IA_G%d,IB_G%d,IC_G%d;VA_G%d,VB_G%d,VC_G%d;", t_i, t_i, t_i, t_i, t_i, t_i);
     svCreate(t_i, svThreadRun, t_dataList);
   }
 }

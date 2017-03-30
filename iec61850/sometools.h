@@ -57,4 +57,6 @@ struct s_linkList* linkListCreate(void*);
 
 void linkListAppend(struct s_linkList**, struct s_linkList*);
 
+int strCharCount(char*,char);
+
 #endif

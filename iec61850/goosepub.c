@@ -198,7 +198,7 @@ int gooseApduCalculate(struct s_goosePublisher* vp_gooseData)
   vp_gooseData->m_dataSetLength = getGooseAllDataLength(vp_gooseData->mp_dataSetHead);
   t_gooseApduLength += 1 + (DEF_actulLength(vp_gooseData->m_dataSetLength)) + DEF_padLengthHead(vp_gooseData->m_dataSetLength);
   t_gooseApduLength += vp_gooseData->m_dataSetLength;
-  //  to be do...
+  //  to be continued...
 
   int t_pduLen = t_gooseApduLength + 8;
   t_pduLen += 2 + (DEF_pduLength(t_pduLen));
@@ -226,7 +226,7 @@ int goosePduEncode(struct s_goosePublisher* vp_gooseData, int v_gooseApduLength)
   t_bufPos = setGooseTlvInt((char)0x8a, vp_gooseData->m_numDataSetEntries, t_buff, t_bufPos);  //  endian
   t_bufPos = setGooseDataSetLength((char)0xab, vp_gooseData->m_dataSetLength, t_buff, t_bufPos);  //  endian
   t_bufPos = setGooseDataSetList(vp_gooseData->mp_dataSetHead, t_buff, t_bufPos);
-  //  to be do...
+  //  to be continued...
 
   return(t_bufPos);
 }

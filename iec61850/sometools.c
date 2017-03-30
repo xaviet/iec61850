@@ -123,3 +123,23 @@ void linkListAppend(struct s_linkList** vp_head, struct s_linkList* vp_node)
     tp_node->mp_next = vp_node;
   }
 }
+
+int strCharCount(char* vp_str, char v_c)
+{
+  int t_i = 0;
+  char* tp_str = vp_str;
+  while(1)
+  {
+    tp_str = strchr(tp_str, v_c);
+    if (tp_str)
+    {
+      t_i++;
+      tp_str += 1;
+    }
+    else
+    {
+      break;
+    }
+  }
+  return(t_i);
+}
