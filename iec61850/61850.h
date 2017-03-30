@@ -16,10 +16,10 @@
 
 //  macro define
 
-#define DEF_pduLength(v_int) ((v_int) > 0x00ffffff) ? 4 : (((v_int) > 0x0000ffff) ? 3 : (((v_int) > 0x000000ff) ? 2 : 1))
-#define DEF_actulLength(v_int) ((v_int) > 0x007fffff) ? 4 : (((v_int) > 0x00007fff) ? 3 : (((v_int) > 0x0000007f) ? 2 : 1))
-#define DEF_padLengthHead(v_int) (((v_int) > 0x0000007f) ? 1 : 0)
-#define DEF_modIntEndian(v_int) ((((v_int) & 0xff000000) >> 24) + (((v_int) & 0x00ff0000) >> 8) + (((v_int) & 0x0000ff00) << 8) + ((v_int & 0x000000ff) << 24))
+#define DEF_pduLength(v_int) (((v_int) > 0x00ffffff) ? 4 : (((v_int) > 0x0000ffff) ? 3 : (((v_int) > 0x000000ff) ? 2 : 1)))
+#define DEF_actulLength(v_int) (((v_int) > 0x007fffff) ? 4 : (((v_int) > 0x00007fff) ? 3 : (((v_int) > 0x0000007f) ? 2 : 1)))
+#define DEF_padLengthHead(v_int) ((((v_int) > 0x0000007f) ? 1 : 0))
+#define DEF_modIntEndian(v_int) (((((v_int) & 0xff000000) >> 24) + (((v_int) & 0x00ff0000) >> 8) + (((v_int) & 0x0000ff00) << 8) + ((v_int & 0x000000ff) << 24)))
 
 //  struct
 
