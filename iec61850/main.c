@@ -123,13 +123,13 @@ void work(int v_goosePubNum, int v_svPubNum)
 int main(int argc, char** argv)
 {
   int t_test = 1;
-  int t_goosePubNum = 0;
-  int t_svPubNum = 1;
+  int t_goosePubNum = 2;
+  int t_svPubNum = 2;
   if (argc > 1)
   {
     sscanf(argv[1], "%d", &t_goosePubNum);
   }
-  if(argc > 2)
+  if (argc > 2)
   {
     sscanf(argv[2], "%d", &t_svPubNum);
   }
@@ -140,15 +140,17 @@ int main(int argc, char** argv)
   createAppData();
   (t_test == 1) ? test(t_goosePubNum, t_svPubNum) : work(t_goosePubNum, t_svPubNum);
   g_byteCount = 0;
-  long long t_startTime = *gp_appData->mp_timerCount;
-  long long t_currentTime = t_startTime;
+  int t_timer = 0;
+  struct timeval t_startTime, t_currentTime;
+  getDateTime(&t_startTime);
   while (*gp_appData->mp_running)
   {
     timeDelay(0x1);
-    if (*gp_appData->mp_timerCount)
+    getDateTime(&t_currentTime);
+    t_timer = t_currentTime.tv_sec - t_startTime.tv_sec;
+    if (t_timer)
     {
-      t_currentTime = *gp_appData->mp_timerCount;
-      printf("\rBand: %9.3fMbps Send Byte: %-16lld  ", (float)(g_byteCount) /(125 * (float)(t_currentTime - t_startTime)), g_byteCount);
+      printf("\rBand: %9.3fMbps Send Byte: %-16lld  ", (float)(g_byteCount) / (((float)t_timer) * 125000), g_byteCount);
     }
   }
   printf("\n");
