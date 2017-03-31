@@ -143,3 +143,17 @@ int strCharCount(char* vp_str, char v_c)
   }
   return(t_i);
 }
+
+int timeDelay(int v_times)
+{
+  //  50ms
+  int t_sum = 0;
+  for (int t_i=0; t_i<v_times; t_i++)
+  {
+    for (int t_j = 0; t_j<0xffffff; t_j++)
+    {
+      t_sum++;
+    }
+  }
+  return(t_sum);
+}

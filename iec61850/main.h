@@ -16,6 +16,11 @@
 
 //include files
 
+#include "rawsocket.h"
+#include "sometools.h"
+#include "svpub.h"
+#include "goosepub.h"
+
 #include "sys/socket.h"
 #include "sys/ioctl.h"
 #include "linux/if_packet.h"
@@ -32,11 +37,7 @@
 #include "sys/time.h"
 #include "signal.h"
 #include "pthread.h"
-
-#include "rawsocket.h"
-#include "sometools.h"
-#include "svpub.h"
-#include "goosepub.h"
+#include "unistd.h"
 
 //  macro define
 
@@ -73,13 +74,13 @@ void threadDataAppend(struct s_appData*, struct s_linkList*);
 
 void createAppData();
 
-void pubCreate(int);
+void pubCreate(int, int);
 
 void destoryAppData(struct s_appData*);
 
-void work(int);
+void work(int, int);
 
-void test(int);
+void test(int, int);
 
 int main(int, char**);
 

@@ -59,4 +59,6 @@ void linkListAppend(struct s_linkList**, struct s_linkList*);
 
 int strCharCount(char*,char);
 
+int timeDelay(int);
+
 #endif

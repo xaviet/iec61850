@@ -11,17 +11,18 @@
 
 //include files
 
-#include "time.h"
-#include "sys/time.h"
-#include "stdint.h"
-
 #include "61850.h"
 #include "rawsocket.h"
 #include "sometools.h"
 
+#include "time.h"
+#include "sys/time.h"
+#include "stdint.h"
+#include "unistd.h"
+
 //  macro define
 
-#define DEF_gooseDefaultFrameInterval 5000
+#define DEF_gooseDefaultFrameInterval 1
 #define DEF_gooseDefaultDMac {(char)0x01,(char)0x0c,(char)0xcd,(char)0x01,(char)0x00,(char)0x01}
 #define DEF_gooseDefaultPriority 0x4
 #define DEF_gooseDefaultVlanId 0x1

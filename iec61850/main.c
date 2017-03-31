@@ -93,49 +93,72 @@ void svCreate(int v_id, void* vp_svThreadRun, char* v_data)
   gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 1, NULL, 1);
 }
 
-void pubCreate(int v_i)
+void pubCreate(int v_goosePubNum, int v_svPubNum)
 {
   char t_dataList[DEF_svDataFileInfo] = "";
-  for (int t_i = 1; t_i <= v_i; t_i++)
+  int t_i = 0;
+  for (t_i = 1; t_i <= v_goosePubNum; t_i++)
   {
     gooseCreate(t_i, gooseThreadRun);
-    //sprintf(t_dataList, "IA_G%d;", t_i);
-    sprintf(t_dataList, "IA_G%d,IB_G%d,IC_G%d;VA_G%d,VB_G%d,VC_G%d;", t_i, t_i, t_i, t_i, t_i, t_i);
-    svCreate(t_i, svThreadRun, t_dataList);
+  }
+  for (t_i = 1; t_i <= v_svPubNum; t_i++)
+  {
+    sprintf(t_dataList, "IA_G%d,IB_G%d,IC_G%d;VA_G%d,VB_G%d,VC_G%d,VA_G%d,VB_G%d,VC_G%d;", t_i, t_i, t_i, t_i, t_i, t_i, t_i, t_i, t_i);
+    if (t_i <= 4)
+    {
+      svCreate(t_i, svThreadRun, t_dataList);
+    }
+    else
+    {
+      break;
+    }
   }
 }
-void work(int v_i)
+void work(int v_goosePubNum, int v_svPubNum)
 {
   createSignal((int**)&gp_appData->mp_running, (long long**)&gp_appData->mp_timerCount, DEF_timeAccurSec, DEF_timeAccurUSec);
-  pubCreate(v_i);
-  while (*gp_appData->mp_running)
-  {
-    sleep(1);
-  }
+  pubCreate(v_goosePubNum, v_svPubNum);
 }
-
-#define DEF_test 1
 
 int main(int argc, char** argv)
 {
-  int t_pubNum = 1;
+  int t_test = 1;
+  int t_goosePubNum = 0;
+  int t_svPubNum = 1;
   if (argc > 1)
   {
-    sscanf(argv[1], "%d", &t_pubNum);
+    sscanf(argv[1], "%d", &t_goosePubNum);
+  }
+  if(argc > 2)
+  {
+    sscanf(argv[2], "%d", &t_svPubNum);
+  }
+  if (argc > 3)
+  {
+    sscanf(argv[3], "%d", &t_test);
   }
   createAppData();
-  (DEF_test) ? test(t_pubNum) : work(t_pubNum);
+  (t_test == 1) ? test(t_goosePubNum, t_svPubNum) : work(t_goosePubNum, t_svPubNum);
+  g_byteCount = 0;
+  long long t_startTime = *gp_appData->mp_timerCount;
+  long long t_currentTime = t_startTime;
+  while (*gp_appData->mp_running)
+  {
+    timeDelay(0x1);
+    if (*gp_appData->mp_timerCount)
+    {
+      t_currentTime = *gp_appData->mp_timerCount;
+      printf("\rBand: %9.3fMbps Send Byte: %-16lld  ", (float)(g_byteCount) /(125 * (float)(t_currentTime - t_startTime)), g_byteCount);
+    }
+  }
+  printf("\n");
   destoryAppData(gp_appData);
   return(0);
 }
 
-void test(int v_i)
+void test(int v_goosePubNum, int v_svPubNum)
 {
   createSignal((int**)&gp_appData->mp_running, NULL, 0, 0);
   gp_appData->mp_timerCount = (long long*)&g_timerCount;
-  pubCreate(v_i);
-  while (*gp_appData->mp_running)
-  {
-    sleep(1);
-  }
+  pubCreate(v_goosePubNum, v_svPubNum);
 }

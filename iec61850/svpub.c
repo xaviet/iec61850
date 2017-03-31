@@ -49,12 +49,13 @@ void getAnalogValueInfo(struct s_svAsduNode* vp_node, char* vp_buf)
 
 void getAnalogValueData(struct s_svAsduNode* vp_node, FILE* v_fd, int v_channelNum, int v_index)
 {
-  char t_data[DEF_svDataItemLen] = { 0 };
+  char t_data[DEF_svDataFileInfo] = { 0 };
   int t_i = v_index;
+  int t_smpTotalNumber = vp_node->m_samplingNumber * v_channelNum;
   while (1)
   {
-    fgets(t_data, DEF_svDataItemLen, v_fd);
-    if ((strlen(t_data) > 0) && (t_i < vp_node->m_samplingNumber))
+    fgets(t_data, DEF_svDataFileInfo, v_fd);
+    if ((strlen(t_data) > 0) && (t_i < t_smpTotalNumber))
     {
       sscanf(t_data, "%d", &(*vp_node->mp_data)[t_i]);
       t_i += v_channelNum;
@@ -94,7 +95,7 @@ struct s_svAsduNode* setAsduNode(char* vp_fileName)
         tp_node->m_confRev = 1;
         tp_node->m_smpCount = 0;
         tp_node->m_smpSynch = 1;
-        t_len = (unsigned int)(tp_node->m_samplingNumber*tp_node->m_channelNum * sizeof(int));
+        t_len = ((unsigned int)tp_node->m_samplingNumber * (unsigned int)tp_node->m_channelNum * sizeof(int));
         tp_node->mp_data = malloc(t_len);
         memset(tp_node->mp_data, 0, t_len);
       }
@@ -264,7 +265,7 @@ int setSvAsduData(struct s_svAsduNode* vp_asdu, char* vp_buff, int v_bufPos)
     v_bufPos = setAsduInt((*vp_asdu->mp_data)[vp_asdu->m_txPoint + t_i], vp_buff, v_bufPos);
     v_bufPos = setAsduInt(0x0, vp_buff, v_bufPos);
   }
-  vp_asdu->m_txPoint = ((vp_asdu->m_txPoint >= (vp_asdu->m_samplingNumber - 1)) ? 0 : (vp_asdu->m_txPoint + 3));
+  vp_asdu->m_txPoint = ((vp_asdu->m_txPoint >= ((vp_asdu->m_samplingNumber -1) * vp_asdu->m_channelNum)) ? 0 : (vp_asdu->m_txPoint + vp_asdu->m_channelNum));
   vp_asdu->m_smpCount = ((vp_asdu->m_smpCount >= (vp_asdu->m_samplingRate - 1)) ? 0 : (vp_asdu->m_smpCount + 1));
   return(v_bufPos);
 }
@@ -352,11 +353,18 @@ void svFrameSend(struct s_gooseAndSvThreadData* vp_svThreadData, struct s_svPubl
 {
   if (((*vp_svThreadData->mp_timerCount) > (vp_svPub->m_lastTimerCount + vp_svPub->m_frameInterval)) || (vp_svPub->m_lastTimerCount == 0))
   {
-    vp_svPub->m_lastTimerCount = *vp_svThreadData->mp_timerCount;
-    sendData(vp_svThreadData->mp_socket, vp_svPub->mp_buffer, vp_svPub->m_length);
+    if (svPayloadCreate(vp_svPub) > DEF_maxFrameLen)
+    {
+      perror("The sv frame length big than DEF_maxFrameLen");
+    }
+    else
+    {
+      vp_svPub->m_lastTimerCount = *vp_svThreadData->mp_timerCount;
+      sendData(vp_svThreadData->mp_socket, vp_svPub->mp_buffer, vp_svPub->m_length);
+    }
     if (vp_svPub->m_lastTimerCount == 0)
     {
-      sleep(0);
+      sleep(1);
     }
   }
 }
@@ -370,14 +378,9 @@ void svThreadRun(struct s_gooseAndSvThreadData* vp_svThreadData)
     svDataUpdate(vp_svThreadData, tp_svPub);
     if (tp_svPub->m_enable)
     {
-      if (svPayloadCreate(tp_svPub) > DEF_maxFrameLen)
-      {
-        perror("The sv frame length big than DEF_maxFrameLen");
-        break;
-      }
       svFrameSend(vp_svThreadData, tp_svPub);
     }
-    sleep(0);
+    //sleep(0);
   }
   svPubDestory(tp_svPub);
 }

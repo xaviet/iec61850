@@ -11,13 +11,14 @@
 
 //include files
 
-#include "sys/time.h"
-#include "stdint.h"
-
 #include "61850.h"
 #include "rawsocket.h"
 #include "sometools.h"
 #include "goosepub.h"
+
+#include "sys/time.h"
+#include "stdint.h"
+#include "unistd.h"
 
 //  macro define
 
@@ -25,9 +26,8 @@
 #define DEF_svDataFilePath "./data/"
 #define DEF_svDataFileExtNmae ".rec"
 #define DEF_svDataItemLen 8
-#define DEF_svDataFormat "type:%[^;];id:%[^;];phase:%[^;];unit:%[^;];factorA:%f;factorB:%f;samplingRate:%d;samplingNumber:%lld;"
+#define DEF_svDataFormat "type:%[^;];id:%[^;];phase:%[^;];unit:%[^;];factorA:%f;factorB:%f;samplingRate:%d;samplingNumber:%d;"
 
-#define DEF_svDefaultDataNumberPerFrame 1
 #define DEF_svDefaultIntervalPerFrame 1
 #define DEF_svDefaultDMac {(char)0x01,(char)0x0c,(char)0xcd,(char)0x04,(char)0x00,(char)0x01}
 #define DEF_svDefaultPriority 4
@@ -55,8 +55,8 @@ struct s_svAsduNode
   float m_factorA;
   float m_factorB;
   int m_samplingRate;
-  long long m_samplingNumber;
-  long long m_txPoint;
+  int m_samplingNumber;
+  int m_txPoint;
   int m_channelNum;
   int (*mp_data)[];
 };

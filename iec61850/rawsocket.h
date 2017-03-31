@@ -41,6 +41,8 @@ struct s_ethernetSocket
 
 //  global
 
+long long g_byteCount;
+
 //  function
 
 void getInterfaceAddress(int, char*, char*);

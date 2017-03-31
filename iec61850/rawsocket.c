@@ -94,6 +94,7 @@ int receiveData(struct s_ethernetSocket* vp_socket, char* vp_buffer, int v_lengt
 void sendData(struct s_ethernetSocket* vp_socket, char* vp_buffer, int v_length)
 {
   sendto(vp_socket->m_rawSocket, vp_buffer, (unsigned int)v_length, 0, (struct sockaddr*)&(vp_socket->m_socketAddress), sizeof(vp_socket->m_socketAddress));
+  g_byteCount += v_length;
 }
 
 void destorySocket(struct s_ethernetSocket* vp_socket)
