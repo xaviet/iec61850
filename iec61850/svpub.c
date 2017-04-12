@@ -364,7 +364,7 @@ void svFrameSend(struct s_gooseAndSvThreadData* vp_svThreadData, struct s_svPubl
     }
     if (vp_svPub->m_lastTimerCount == 0)
     {
-      //sleep(1);
+      sleep(1);
     }
   }
 }

@@ -84,7 +84,9 @@
     <ClCompile Include="svpub.c" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="fengqiao220.zip" />
     <None Include="Makefile" />
+    <None Include="scdanalysis.py" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="61850.h" />

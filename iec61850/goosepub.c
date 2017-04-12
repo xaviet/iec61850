@@ -405,7 +405,7 @@ void gooseFrameSend(struct s_gooseAndSvThreadData* vp_gooseThreadData, struct s_
     sendData(vp_gooseThreadData->mp_socket, vp_goosePub->mp_buffer, vp_goosePub->m_length);
     if (vp_goosePub->m_lastTimerCount == 0)
     {
-      //sleep(1);
+      sleep(1);
     }
   }
 }

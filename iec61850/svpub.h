@@ -30,6 +30,7 @@
 
 #define DEF_svDefaultIntervalPerFrame 1
 #define DEF_svDefaultDMac {(char)0x01,(char)0x0c,(char)0xcd,(char)0x04,(char)0x00,(char)0x01}
+//#define DEF_svDefaultDMac {(char)0xff,(char)0xff,(char)0xff,(char)0xff,(char)0xff,(char)0xff}
 #define DEF_svDefaultPriority 4
 #define DEF_svDefaultVlanId 1
 #define DEF_svDefaultAppid 0x4001

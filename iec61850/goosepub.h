@@ -24,6 +24,7 @@
 
 #define DEF_gooseDefaultFrameInterval 1
 #define DEF_gooseDefaultDMac {(char)0x01,(char)0x0c,(char)0xcd,(char)0x01,(char)0x00,(char)0x01}
+//#define DEF_gooseDefaultDMac {(char)0xff,(char)0xff,(char)0xff,(char)0xff,(char)0xff,(char)0xff}
 #define DEF_gooseDefaultPriority 0x4
 #define DEF_gooseDefaultVlanId 0x1
 #define DEF_gooseDefaultAppid 0x0001
