@@ -25,9 +25,13 @@ import zipfile
 import sys
 import xml.etree.ElementTree as elementTree
 import sqlite3
+import os
 
-g_zipFile='./fengqiao220.zip'
+g_zipFile='.{0}fengqiao220.zip'.format(os.sep)
 g_xmlExtendName='scd'
+g_dbPath='..{0}db{0}fengqiao.sdb{0}'.format(os.sep)
+g_gooseTab='goose'
+g_smvTab='smv'
 
 def spentTime(v_fun):
   '''
@@ -40,18 +44,43 @@ def spentTime(v_fun):
     return(t_rt)
   return(t_decoratorfun)
 
+def sqliteOpt(v_db,v_opt):
+  t_rtarray=[]
+  t_dbcon=sqlite3.connect(v_db)
+  t_dbcur=t_dbcon.cursor()
+  t_dbcur.execute(v_opt)
+  t_rtarray=t_dbcur.fetchall()
+  t_dbcon.commit()
+  t_dbcur.close()
+  t_dbcon.close()
+  return(t_rtarray)
+
+def sqliteOptBatch(v_dbname,v_dboptbatch):
+  t_dbcon=sqlite3.connect(dbpath+v_dbname)
+  t_dbcur=t_dbcon.cursor()
+  for t_el in v_dboptbatch:
+    t_dbcur.execute(t_el)
+  t_dbcon.commit()
+  t_dbcur.close()
+  t_dbcon.close()
+  return(0)
+  
 class c_xmlDataParser():
   m_atttrib={'maxDepth':0,'numIed':0,'numDataSet':0,'numAddress':0}
   m_xmlData={'attrib':m_atttrib}
   m_depth=0
   m_path=[]
   m_tag=''
+  m_attrib=''
   m_data=''
   m_currentParser=''
   m_recoder={}
-  m_gse=[]
-  m_smv=[]
-  m_dataSet=[]
+  m_gse={}
+  m_smv={}
+  m_gseCb={}
+  m_smvCb={}
+  m_dataSet={}
+  m_inputs=[]
   m_tagParser={}
   
   def parseGoose(self,v_mode):
@@ -67,7 +96,8 @@ class c_xmlDataParser():
         else:
           self.m_recoder[self.m_path[-1][0]]=self.m_data
     elif(v_mode==2):
-      self.m_gse.append(self.m_recoder)
+      t_index='{0}{1}/LLN0$go${2}'.format(self.m_recoder['iedName'],self.m_recoder['ldInst'],self.m_recoder['cbName'])
+      self.m_gse[t_index]=self.m_recoder
       self.m_recoder={}
   
   def parseSmv(self,v_mode):
@@ -80,23 +110,79 @@ class c_xmlDataParser():
       if(self.m_data!=''):
         self.m_recoder[self.m_path[-1][1]['type']]=self.m_data
     elif(v_mode==2):
-      self.m_smv.append(self.m_recoder)
+      t_index='{0}{1}/LLN0$go${2}'.format(self.m_recoder['iedName'],self.m_recoder['ldInst'],self.m_recoder['cbName'])
+      self.m_smv[t_index]=self.m_recoder
       self.m_recoder={}
 
   def parseDataSet(self,v_mode):
     if(v_mode==0):
-      print(self.m_path)
+      self.m_recoder['name']=self.m_path[-1][1]['name']
+      self.m_recoder['lnClass']=self.m_path[-2][1]['lnClass']
+      self.m_recoder['ld']=self.m_path[-3][1]['inst']
+      self.m_recoder['ap']=self.m_path[-5][1]['name']
+      self.m_recoder['ied']=self.m_path[-6][1]['name']
+      self.m_recoder['fcda']=[]
     elif(v_mode==1):
-      if(self.m_data!=''):
-        print(self.m_data)
+      if(self.m_tag=='FCDA'):
+         self.m_recoder['fcda'].append(self.m_attrib)
     elif(v_mode==2):
-      self.m_dataSet.append(self.m_recoder)
+      t_index='{0}{1}/LLN0${2}'.format(self.m_recoder['ied'],self.m_recoder['ld'],self.m_recoder['name'])
+      self.m_dataSet[t_index]=self.m_recoder
       self.m_recoder={}
-      
+    
+  def parseInputs(self,v_mode):
+    if(v_mode==0):
+      self.m_recoder['lnClass']=self.m_path[-2][1]['lnClass']
+      self.m_recoder['ld']=self.m_path[-3][1]['inst']
+      self.m_recoder['ap']=self.m_path[-5][1]['name']
+      self.m_recoder['ied']=self.m_path[-6][1]['name']
+      self.m_recoder['extRef']=[]
+    elif(v_mode==1):
+      if(self.m_tag=='ExtRef'):
+        self.m_recoder['extRef'].append(self.m_attrib)
+    elif(v_mode==2):
+      self.m_inputs.append(self.m_recoder)
+      self.m_recoder={}
+        
+  def parseGooseCb(self,v_mode):
+    if(v_mode==0):
+      self.m_recoder['name']=self.m_path[-1][1]['name']
+      self.m_recoder['dataSet']=self.m_path[-1][1]['datSet']
+      self.m_recoder['ld']=self.m_path[-3][1]['inst']
+      self.m_recoder['ap']=self.m_path[-5][1]['name']
+      self.m_recoder['ied']=self.m_path[-6][1]['name']
+    elif(v_mode==1):
+      pass
+    elif(v_mode==2):
+      t_index='{0}{1}/LLN0$go${2}'.format(self.m_recoder['ied'],self.m_recoder['ld'],self.m_recoder['name'])
+      self.m_gseCb[t_index]=self.m_recoder
+      self.m_recoder={}
+ 
+  def parseSmvCb(self,v_mode):
+    if(v_mode==0):
+      self.m_recoder['name']=self.m_path[-1][1]['name']
+      self.m_recoder['dataSet']=self.m_path[-1][1]['datSet']
+      self.m_recoder['smpRate']=self.m_path[-1][1]['smpRate']
+      self.m_recoder['nofASDU']=self.m_path[-1][1]['nofASDU']
+      self.m_recoder['ld']=self.m_path[-3][1]['inst']
+      self.m_recoder['ap']=self.m_path[-5][1]['name']
+      self.m_recoder['ied']=self.m_path[-6][1]['name']
+      self.m_recoder['smvOpts']=[]
+    elif(v_mode==1):
+      if(self.m_tag=='SmvOpts'):
+        self.m_recoder['smvOpts'].append(self.m_attrib)
+    elif(v_mode==2):
+      t_index='{0}{1}/LLN0$go${2}'.format(self.m_recoder['ied'],self.m_recoder['ld'],self.m_recoder['name'])
+      self.m_smvCb[t_index]=self.m_recoder
+      self.m_recoder={}
+ 
   def registerTagParser(self):
     self.m_tagParser['GSE']=self.parseGoose
     self.m_tagParser['SMV']=self.parseSmv
     self.m_tagParser['DataSet']=self.parseDataSet
+    self.m_tagParser['Inputs']=self.parseInputs 
+    self.m_tagParser['GSEControl']=self.parseGooseCb
+    self.m_tagParser['SampledValueControl']=self.parseSmvCb   
   
   def __init__(self):
     self.registerTagParser()
@@ -107,7 +193,8 @@ class c_xmlDataParser():
   
   def start(self,v_tag,v_attrib): 
     self.m_tag=self.popNamespace(v_tag)
-    self.m_path.append((self.m_tag,v_attrib))
+    self.m_attrib=v_attrib
+    self.m_path.append((self.m_tag,self.m_attrib))
     self.m_depth+=1
     if(self.m_depth>self.m_xmlData['attrib']['maxDepth']):
       self.m_xmlData['attrib']['maxDepth']=self.m_depth
@@ -130,13 +217,13 @@ class c_xmlDataParser():
     self.m_depth-=1
     
   def data(self,v_data):
-    self.m_data=v_data.strip()
-    if(self.m_currentParser!=''):
+    if(self.m_currentParser!='' and v_data!='\n'):
+      self.m_data=v_data.strip()
       self.m_tagParser[self.m_currentParser](1)
     
   def close(self):   
-    return((self.m_xmlData,self.m_gse,self.m_smv))
-        
+    return((self.m_xmlData,self.m_gse,self.m_smv,self.m_gseCb,self.m_smvCb,self.m_dataSet,self.m_inputs))
+
 class c_xmlFile():
 
   def __init__(self,v_xmlFile):
@@ -160,6 +247,23 @@ class c_zipFile():
   def __exit__(self,exc_ty,exc_val,tb):
     self.m_zipFile.close()
 
+def createGooseDb(v_address,v_cb,v_dataSet,v_inputs):
+  t_sn=0
+  t_opt=[]
+  t_opt.append('create table if not exists \'{0}\'(code integer primary key NOT NULL,appid integer,vlanid integer,vlanpriority integer,dataset varchar,cb varchar);'.format(g_gooseTab))
+  for t_key in v_address:
+    print(t_key,v_address[t_key])
+    t_sn+=1
+  optrecodbatch(g_dbPath,t_opt)
+  
+def createSmvDb(v_address,v_cb,v_dataSet,v_inputs):
+  t_sn=0
+  t_opt=[]
+  t_opt.append('create table if not exists \'{0}\'(code integer primary key NOT NULL,appid integer,vlanid integer,vlanpriority integer,dataset varchar,cb varchar);'.format(g_smvTab))
+  for t_key in v_address:
+    t_sn+=1
+  optrecodbatch(g_dbPath,t_opt)
+  
 @spentTime
 def main(v_zipFile,v_xmlExtendName):
   t_zipFile=c_zipFile(v_zipFile,v_xmlExtendName)
@@ -171,9 +275,16 @@ def main(v_zipFile,v_xmlExtendName):
     #elementTree.register_namespace('sf','http://www.sifang.com"')
     t_xmlParser=elementTree.XMLParser(target=t_xmlTarget)
     t_xmlParser.feed(t_xmlData)
-    t_xmlData=t_xmlParser.close()
-    print(t_xmlData[1][0],'\n',t_xmlData[2][0])
-  
+    t_result=t_xmlParser.close()
+    logging.debug(' goose: %d'%(len(t_result[1]),))
+    logging.debug(' smv: %d'%(len(t_result[2]),))
+    logging.debug(' goosecb: %d'%(len(t_result[3]),))
+    logging.debug(' smvcb: %d'%(len(t_result[4]),)) 
+    logging.debug(' dataset: %d'%(len(t_result[5]),)) 
+    logging.debug(' inputs: %d'%(len(t_result[6]),)) 
+    createGooseDb(t_result[1],t_result[3],t_result[5],t_result[6])
+    createSmvDb(t_result[2],t_result[4],t_result[5],t_result[6])
+    
 if(__name__=='__main__'):
   g_zipFile=sys.argv[1] if(len(sys.argv)>1) else g_zipFile
   logging.debug(' %s'%(g_zipFile,))
