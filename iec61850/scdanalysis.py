@@ -29,7 +29,7 @@ import os
 
 g_zipFile='.{0}fengqiao220.zip'.format(os.sep)
 g_xmlExtendName='scd'
-g_dbPath='..{0}db{0}fengqiao.sdb{0}'.format(os.sep)
+g_dbPath='.{0}db{0}fengqiao.sdb'.format(os.sep)
 g_gooseTab='goose'
 g_smvTab='smv'
 
@@ -45,28 +45,29 @@ def spentTime(v_fun):
   return(t_decoratorfun)
 
 def sqliteOpt(v_db,v_opt):
-  t_rtarray=[]
-  t_dbcon=sqlite3.connect(v_db)
-  t_dbcur=t_dbcon.cursor()
-  t_dbcur.execute(v_opt)
-  t_rtarray=t_dbcur.fetchall()
-  t_dbcon.commit()
-  t_dbcur.close()
-  t_dbcon.close()
-  return(t_rtarray)
+  t_rtArray=[]
+  t_dbCon=sqlite3.connect(v_db)
+  t_dbCur=t_dbCon.cursor()
+  t_dbCur.execute(v_opt)
+  t_rtArray=t_dbCur.fetchall()
+  t_dbCon.commit()
+  t_dbCur.close()
+  t_dbCon.close()
+  return(t_rtArray)
 
-def sqliteOptBatch(v_dbname,v_dboptbatch):
-  t_dbcon=sqlite3.connect(dbpath+v_dbname)
-  t_dbcur=t_dbcon.cursor()
-  for t_el in v_dboptbatch:
-    t_dbcur.execute(t_el)
-  t_dbcon.commit()
-  t_dbcur.close()
-  t_dbcon.close()
+def sqliteOptBatch(v_db,v_opt):
+  
+  t_dbCon=sqlite3.connect(v_db)
+  t_dbCur=t_dbCon.cursor()
+  for t_el in v_opt:
+    t_dbCur.execute(t_el)
+  t_dbCon.commit()
+  t_dbCur.close()
+  t_dbCon.close()
   return(0)
   
 class c_xmlDataParser():
-  m_atttrib={'maxDepth':0,'numIed':0,'numDataSet':0,'numAddress':0}
+  m_atttrib={'maxDepth':0,'numIed':0,'numAddress':0}
   m_xmlData={'attrib':m_atttrib}
   m_depth=0
   m_path=[]
@@ -200,8 +201,6 @@ class c_xmlDataParser():
       self.m_xmlData['attrib']['maxDepth']=self.m_depth
     if(self.m_tag=='IED'):
       self.m_xmlData['attrib']['numIed']+=1
-    if(self.m_tag=='DataSet'):
-      self.m_xmlData['attrib']['numDataSet']+=1
     if(self.m_tag=='Address'):
       self.m_xmlData['attrib']['numAddress']+=1 
     if(self.m_tag in self.m_tagParser):
@@ -247,22 +246,25 @@ class c_zipFile():
   def __exit__(self,exc_ty,exc_val,tb):
     self.m_zipFile.close()
 
-def createGooseDb(v_address,v_cb,v_dataSet,v_inputs):
-  t_sn=0
+def createGooseAndSmvTab(v_tab,v_address,v_cb,v_dataSet,v_inputs):
+  t_sn=1
   t_opt=[]
-  t_opt.append('create table if not exists \'{0}\'(code integer primary key NOT NULL,appid integer,vlanid integer,vlanpriority integer,dataset varchar,cb varchar);'.format(g_gooseTab))
-  for t_key in v_address:
-    print(t_key,v_address[t_key])
+  t_opt.append('create table if not exists \'{0}\'(sn integer primary key NOT NULL,appid integer,vlanid integer,vlanpriority integer,mac varchar,dataset varchar,cb varchar);'.format(v_tab))
+  for t_cb in v_address:
+    t_appid=str(int(v_address[t_cb]['APPID'],16))
+    t_vlanid=str(int(v_address[t_cb]['VLAN-ID'],16))
+    t_vlanpriority=str(int(v_address[t_cb]['VLAN-PRIORITY'],16))
+    t_mac=v_address[t_cb]['MAC-Address']
+    t_dataset='{0}${1}'.format((t_cb.split('$'))[0],v_cb[t_cb]['dataSet'])
+    t_opt.append('replace into \'{0}\'(sn,appid,vlanid,vlanpriority,mac,dataset,cb) values({1},{2},{3},{4},\'{5}\',\'{6}\',\'{7}\');'.format(v_tab,t_sn,t_appid,t_vlanid,t_vlanpriority,t_mac,t_dataset,t_cb))
     t_sn+=1
-  optrecodbatch(g_dbPath,t_opt)
+  sqliteOptBatch(g_dbPath,t_opt)
+
+def createGooseTab(v_address,v_cb,v_dataSet,v_inputs):
+  createGooseAndSmvTab(g_gooseTab,v_address,v_cb,v_dataSet,v_inputs)
   
-def createSmvDb(v_address,v_cb,v_dataSet,v_inputs):
-  t_sn=0
-  t_opt=[]
-  t_opt.append('create table if not exists \'{0}\'(code integer primary key NOT NULL,appid integer,vlanid integer,vlanpriority integer,dataset varchar,cb varchar);'.format(g_smvTab))
-  for t_key in v_address:
-    t_sn+=1
-  optrecodbatch(g_dbPath,t_opt)
+def createSmvTab(v_address,v_cb,v_dataSet,v_inputs):
+  createGooseAndSmvTab(g_smvTab,v_address,v_cb,v_dataSet,v_inputs)
   
 @spentTime
 def main(v_zipFile,v_xmlExtendName):
@@ -276,14 +278,14 @@ def main(v_zipFile,v_xmlExtendName):
     t_xmlParser=elementTree.XMLParser(target=t_xmlTarget)
     t_xmlParser.feed(t_xmlData)
     t_result=t_xmlParser.close()
-    logging.debug(' goose: %d'%(len(t_result[1]),))
+    logging.debug(' %s'%(str(t_result[0]),))
     logging.debug(' smv: %d'%(len(t_result[2]),))
     logging.debug(' goosecb: %d'%(len(t_result[3]),))
     logging.debug(' smvcb: %d'%(len(t_result[4]),)) 
     logging.debug(' dataset: %d'%(len(t_result[5]),)) 
     logging.debug(' inputs: %d'%(len(t_result[6]),)) 
-    createGooseDb(t_result[1],t_result[3],t_result[5],t_result[6])
-    createSmvDb(t_result[2],t_result[4],t_result[5],t_result[6])
+    createGooseTab(t_result[1],t_result[3],t_result[5],t_result[6])
+    createSmvTab(t_result[2],t_result[4],t_result[5],t_result[6])
     
 if(__name__=='__main__'):
   g_zipFile=sys.argv[1] if(len(sys.argv)>1) else g_zipFile
