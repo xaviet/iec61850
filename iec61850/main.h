@@ -21,6 +21,7 @@
 #include "svpub.h"
 #include "goosepub.h"
 
+#include "sqlite3.h"
 #include "sys/socket.h"
 #include "sys/ioctl.h"
 #include "linux/if_packet.h"
@@ -43,6 +44,9 @@
 
 #define DEF_timeAccurSec 0
 #define DEF_timeAccurUSec 1000
+#define DEF_dbPath "./db/fengqiao.sdb"
+#define DEF_gooseTable "goose"
+#define DEF_smvTable "smv"
 
 //#define DEF_interfaceName "eth2"
 #define DEF_interfaceName "eno33554984"
@@ -66,9 +70,13 @@ struct s_appData* gp_appData;
 
 struct s_linkList* threadDataCreate();
 
+int gooseCallBack(void*, int , char**, char**);
+
+int smvCallBack(void*, int, char**, char**);
+
 void gooseCreate(int, void*);
 
-void svCreate(int, void*, char*);
+void svCreate(int, void*);
 
 void threadDataAppend(struct s_appData*, struct s_linkList*);
 

@@ -22,36 +22,48 @@ void gooseCmdReg(void** vp_gooseDataModify)
   vp_gooseDataModify[104] = goosePublisherSetGoID;
   vp_gooseDataModify[105] = goosePublisherSetDataSetRef;
   vp_gooseDataModify[106] = goosePublisherSetDataSetEntriesInt;
+  vp_gooseDataModify[107] = goosePublisherSetMac;
+  vp_gooseDataModify[108] = goosePublisherSetVlanPriority;
 }
 
-void goosePublisherSetEnable(struct s_goosePublisher* vp_gooseData, char* vp_goID, int v_length)
+void goosePublisherSetMac(struct s_goosePublisher* vp_gooseData, char* vp_buffer, int v_length)
+{
+  memcpy(vp_gooseData->m_dAddr, vp_buffer, DEF_macAddrLen);
+}
+
+void goosePublisherSetVlanPriority(struct s_goosePublisher* vp_gooseData, char* vp_buffer, int v_length)
+{
+  vp_gooseData->m_priority = (char)(v_length & 0x7);
+}
+
+void goosePublisherSetEnable(struct s_goosePublisher* vp_gooseData, char* vp_buffer, int v_length)
 {
   vp_gooseData->m_enable = v_length;
 }
 
-void goosePublisherSetAppid(struct s_goosePublisher* vp_gooseData, char* vp_goID, int v_length)
+void goosePublisherSetAppid(struct s_goosePublisher* vp_gooseData, char* vp_buffer, int v_length)
 {
   vp_gooseData->m_appId = (uint16_t)(v_length & 0xffff);
 }
 
-void goosePublisherSetVlanId(struct s_goosePublisher* vp_gooseData, char* vp_goID, int v_length)
+void goosePublisherSetVlanId(struct s_goosePublisher* vp_gooseData, char* vp_buffer, int v_length)
 {
   vp_gooseData->m_vlanId = (uint16_t)(v_length & 0xffff);
 }
 
-void goosePublisherSetGoID(struct s_goosePublisher* vp_gooseData, char* vp_goID, int v_length)
+void goosePublisherSetGoID(struct s_goosePublisher* vp_gooseData, char* vp_buffer, int v_length)
 {
-  vp_gooseData->m_goID = copyString(vp_goID);
+  vp_gooseData->m_goID = copyString(vp_buffer);
 }
 
-void goosePublisherSetGoCbRef(struct s_goosePublisher* vp_gooseData, char* vp_goCbRef, int v_length)
+void goosePublisherSetGoCbRef(struct s_goosePublisher* vp_gooseData, char* vp_buffer, int v_length)
 {
-  vp_gooseData->m_goCBRef = copyString(vp_goCbRef);
+  vp_gooseData->m_goCBRef = copyString(vp_buffer);
 }
 
-void goosePublisherSetDataSetRef(struct s_goosePublisher* vp_gooseData, char* vp_dataSetRef, int v_length)
+void goosePublisherSetDataSetRef(struct s_goosePublisher* vp_gooseData, char* vp_buffer, int v_length)
 {
-  vp_gooseData->m_dataSetRef = copyString(vp_dataSetRef);
+  vp_gooseData->m_dataSetRef = copyString(vp_buffer);
 }
 
 void goosePublisherSetDataSetEntriesInt(struct s_goosePublisher* vp_gooseData, char* vp_dataSetRef, int v_length)
@@ -201,7 +213,7 @@ int gooseApduCalculate(struct s_goosePublisher* vp_gooseData)
   //  to be continued...
 
   int t_pduLen = t_gooseApduLength + 8;
-  t_pduLen += 2 + (DEF_pduLength(t_pduLen));
+  t_pduLen += 1 + (DEF_actulLength(t_gooseApduLength));
   vp_gooseData->mp_buffer[vp_gooseData->m_lengthField] = (char)(t_pduLen / 256);
   vp_gooseData->mp_buffer[vp_gooseData->m_lengthField + 1] = (char)(t_pduLen % 256);
   return(t_gooseApduLength);

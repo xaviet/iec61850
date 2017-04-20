@@ -81,6 +81,7 @@
     <ClCompile Include="main.c" />
     <ClCompile Include="rawsocket.c" />
     <ClCompile Include="sometools.c" />
+    <ClCompile Include="sqlite3.c" />
     <ClCompile Include="svpub.c" />
   </ItemGroup>
   <ItemGroup>
@@ -94,11 +95,12 @@
     <ClInclude Include="main.h" />
     <ClInclude Include="rawsocket.h" />
     <ClInclude Include="sometools.h" />
+    <ClInclude Include="sqlite3.h" />
     <ClInclude Include="svpub.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <Link>
-      <LibraryDependencies>pthread</LibraryDependencies>
+      <LibraryDependencies>pthread;dl</LibraryDependencies>
     </Link>
     <ClCompile>
       <ThreadSafeStatics>

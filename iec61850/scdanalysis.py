@@ -246,25 +246,34 @@ class c_zipFile():
   def __exit__(self,exc_ty,exc_val,tb):
     self.m_zipFile.close()
 
-def createGooseAndSmvTab(v_tab,v_address,v_cb,v_dataSet,v_inputs):
+def createGooseTab(v_address,v_cb,v_dataSet,v_inputs):
   t_sn=1
   t_opt=[]
-  t_opt.append('create table if not exists \'{0}\'(sn integer primary key NOT NULL,appid integer,vlanid integer,vlanpriority integer,mac varchar,dataset varchar,cb varchar);'.format(v_tab))
+  t_opt.append('create table if not exists \'{0}\'(sn integer primary key NOT NULL,appid integer,vlanid integer,vlanpriority integer,mac varchar,dataset varchar,cb varchar);'.format(g_gooseTab))
   for t_cb in v_address:
     t_appid=str(int(v_address[t_cb]['APPID'],16))
     t_vlanid=str(int(v_address[t_cb]['VLAN-ID'],16))
     t_vlanpriority=str(int(v_address[t_cb]['VLAN-PRIORITY'],16))
     t_mac=v_address[t_cb]['MAC-Address']
     t_dataset='{0}${1}'.format((t_cb.split('$'))[0],v_cb[t_cb]['dataSet'])
-    t_opt.append('replace into \'{0}\'(sn,appid,vlanid,vlanpriority,mac,dataset,cb) values({1},{2},{3},{4},\'{5}\',\'{6}\',\'{7}\');'.format(v_tab,t_sn,t_appid,t_vlanid,t_vlanpriority,t_mac,t_dataset,t_cb))
+    t_opt.append('replace into \'{0}\'(sn,appid,vlanid,vlanpriority,mac,dataset,cb) values({1},{2},{3},{4},\'{5}\',\'{6}\',\'{7}\');'.format(g_gooseTab,t_sn,t_appid,t_vlanid,t_vlanpriority,t_mac,t_dataset,t_cb))
     t_sn+=1
   sqliteOptBatch(g_dbPath,t_opt)
-
-def createGooseTab(v_address,v_cb,v_dataSet,v_inputs):
-  createGooseAndSmvTab(g_gooseTab,v_address,v_cb,v_dataSet,v_inputs)
   
 def createSmvTab(v_address,v_cb,v_dataSet,v_inputs):
-  createGooseAndSmvTab(g_smvTab,v_address,v_cb,v_dataSet,v_inputs)
+  t_sn=1
+  t_opt=[]
+  t_opt.append('create table if not exists \'{0}\'(sn integer primary key NOT NULL,appid integer,vlanid integer,vlanpriority integer,mac varchar,dataset varchar,cb varchar,nofasdu integer);'.format(g_smvTab))
+  for t_cb in v_address:
+    t_appid=str(int(v_address[t_cb]['APPID'],16))
+    t_vlanid=str(int(v_address[t_cb]['VLAN-ID'],16))
+    t_vlanpriority=str(int(v_address[t_cb]['VLAN-PRIORITY'],16))
+    t_mac=v_address[t_cb]['MAC-Address']
+    t_dataset='{0}${1}'.format((t_cb.split('$'))[0],v_cb[t_cb]['dataSet'])
+    t_nofasdu=str(int((v_cb[t_cb]['nofASDU'])))
+    t_opt.append('replace into \'{0}\'(sn,appid,vlanid,vlanpriority,mac,dataset,cb,nofasdu) values({1},{2},{3},{4},\'{5}\',\'{6}\',\'{7}\',{8});'.format(g_smvTab,t_sn,t_appid,t_vlanid,t_vlanpriority,t_mac,t_dataset,t_cb,t_nofasdu))
+    t_sn+=1
+  sqliteOptBatch(g_dbPath,t_opt)
   
 @spentTime
 def main(v_zipFile,v_xmlExtendName):

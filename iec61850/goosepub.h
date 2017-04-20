@@ -35,6 +35,16 @@
 
 //  struct
 
+struct s_gooseData
+{
+  int m_vlanId;
+  int m_vlanPriority;
+  int m_appid;
+  char m_mac[DEF_macAddrLen];
+  char m_cb[DEF_string];
+  char m_dataSet[DEF_string];
+};
+
 struct s_goosePublisher
 {
   char* mp_buffer;
@@ -91,6 +101,10 @@ void goosePublisherSetGoCbRef(struct s_goosePublisher*, char*, int);
 void goosePublisherSetDataSetRef(struct s_goosePublisher*, char*, int);
 
 void goosePublisherSetDataSetEntriesInt(struct s_goosePublisher*, char*, int);
+
+void goosePublisherSetMac(struct s_goosePublisher*, char*, int);
+
+void goosePublisherSetVlanPriority(struct s_goosePublisher*, char*, int);
 
 void gooseBufferPrepare(struct s_goosePublisher*, struct s_gooseAndSvThreadData*);
 

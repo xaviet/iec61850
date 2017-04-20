@@ -61,19 +61,69 @@ void gooseAndSvPubMod(struct s_gooseAndSvThreadData* vp_threadData, int v_type, 
   vp_threadData->m_cmd = v_type;
 }
 
+int gooseCallBack(void* v_arg, int v_nr, char** v_values, char** v_names)
+{
+  struct s_gooseData* t_gooseData = (struct s_gooseData*)v_arg;
+  char* t_ch = *(v_values + 1);
+  sscanf(t_ch, "%d", &(t_gooseData->m_appid));
+  t_ch = *(v_values + 2);
+  sscanf(t_ch, "%d", &(t_gooseData->m_vlanId));
+  t_ch = *(v_values + 3);
+  sscanf(t_ch, "%d", &(t_gooseData->m_vlanPriority));
+  t_ch = *(v_values + 4);
+  sscanf(t_ch, "%2x-%2x-%2x-%2x-%2x-%2x", &(t_gooseData->m_mac[0]), &(t_gooseData->m_mac[1]), &(t_gooseData->m_mac[2]), &(t_gooseData->m_mac[3]), &(t_gooseData->m_mac[4]), &(t_gooseData->m_mac[5]));
+  t_ch = *(v_values + 5);
+  sscanf(t_ch, "%s", t_gooseData->m_dataSet);
+  t_ch = *(v_values + 6);
+  sscanf(t_ch, "%s", t_gooseData->m_cb);
+  return(0);
+}
+
+int smvCallBack(void* v_arg, int v_nr, char** v_values, char** v_names)
+{
+  struct s_smvData* t_smvData = (struct s_smvData*)v_arg;
+  char* t_ch = *(v_values + 1);
+  sscanf(t_ch, "%d", &(t_smvData->m_appid));
+  t_ch = *(v_values + 2);
+  sscanf(t_ch, "%d", &(t_smvData->m_vlanId));
+  t_ch = *(v_values + 3);
+  sscanf(t_ch, "%d", &(t_smvData->m_vlanPriority));
+  t_ch = *(v_values + 4);
+  sscanf(t_ch, "%2x-%2x-%2x-%2x-%2x-%2x", &(t_smvData->m_mac[0]), &(t_smvData->m_mac[1]), &(t_smvData->m_mac[2]), &(t_smvData->m_mac[3]), &(t_smvData->m_mac[4]), &(t_smvData->m_mac[5]));
+  t_ch = *(v_values + 5);
+  sscanf(t_ch, "%s", t_smvData->m_dataSet);
+  t_ch = *(v_values + 6);
+  sscanf(t_ch, "%s", t_smvData->m_cb);
+  t_ch = *(v_values + 7);
+  sscanf(t_ch, "%d", &(t_smvData->m_nofasdu));
+  return(0);
+}
+
+void dbInquary(char* v_tab, int v_in, int v_callBack, void* v_para)
+{
+  char t_sql[DEF_string] = { 0 };
+  sqlite3* t_db=NULL;
+  sqlite3_open(DEF_dbPath, &t_db);
+  sprintf(t_sql, "select * from \'%s\' where sn = %d;", v_tab, v_in);
+  sqlite3_exec(t_db, t_sql, v_callBack, v_para, NULL);
+  sqlite3_close(t_db);
+}
+
 void gooseCreate(int v_id, void* vp_gooseThreadRun)
 {
+  struct s_gooseData t_gooseData;
+  dbInquary(DEF_gooseTable, v_id, gooseCallBack, &t_gooseData);
   struct s_linkList* tp_threadDataLinkList = threadDataCreate();
   printf("goosePubCreate: %4d\n", ((struct s_gooseAndSvThreadData*)(tp_threadDataLinkList->mp_data))->m_index);
   threadDataAppend(gp_appData, tp_threadDataLinkList);
   createThread(vp_gooseThreadRun, tp_threadDataLinkList->mp_data);
-  char t_string[128] = { 0 };
-  sprintf(t_string, "%s%d", "ML2201AMUGO/LLN0$GO$gocb", v_id);
-  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 101, NULL, v_id);
-  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 102, NULL, v_id);
-  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 103, t_string, 0);
-  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 104, "PE2201APIGO/LLN0$GO$GoCBTrip", 0);
-  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 105, "PE2201APIGO/LLN100$GO$GoCBTripdsGOOSE", 0);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 101, NULL, t_gooseData.m_appid);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 102, NULL, t_gooseData.m_vlanId);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 103, t_gooseData.m_cb, 0);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 104, t_gooseData.m_cb, 0);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 105, t_gooseData.m_dataSet, 0);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 107, t_gooseData.m_mac, 0);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 108, NULL, t_gooseData.m_vlanPriority);
   for (int t_i = 0; t_i < v_id; t_i++)
   {
     gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 106, NULL, t_i);
@@ -81,21 +131,25 @@ void gooseCreate(int v_id, void* vp_gooseThreadRun)
   gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 1, NULL, 1);
 }
 
-void svCreate(int v_id, void* vp_svThreadRun, char* v_data)
+void svCreate(int v_id, void* vp_svThreadRun)
 {
+  struct s_smvData t_smvData;
+  dbInquary(DEF_smvTable, v_id, smvCallBack, &t_smvData);
   struct s_linkList* tp_threadDataLinkList = threadDataCreate();
   printf("svPubCreate: %4d\n", ((struct s_gooseAndSvThreadData*)(tp_threadDataLinkList->mp_data))->m_index);
   threadDataAppend(gp_appData, tp_threadDataLinkList);
   createThread(vp_svThreadRun, tp_threadDataLinkList->mp_data);
-  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 101, NULL, 0x4000 + v_id);
-  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 102, NULL, 4000 + v_id);
-  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 103, v_data, 0);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 101, NULL, t_smvData.m_appid);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 102, NULL, t_smvData.m_vlanId);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 103, t_smvData.m_cb, 0);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 104, t_smvData.m_mac, 0);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 105, NULL, t_smvData.m_vlanPriority);
+  gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 106, NULL, t_smvData.m_nofasdu);
   gooseAndSvPubMod((struct s_gooseAndSvThreadData*)tp_threadDataLinkList->mp_data, 1, NULL, 1);
 }
 
 void pubCreate(int v_goosePubNum, int v_svPubNum)
 {
-  char t_dataList[DEF_svDataFileInfo] = "";
   int t_i = 0;
   for (t_i = 1; t_i <= v_goosePubNum; t_i++)
   {
@@ -103,15 +157,7 @@ void pubCreate(int v_goosePubNum, int v_svPubNum)
   }
   for (t_i = 1; t_i <= v_svPubNum; t_i++)
   {
-    sprintf(t_dataList, "IA_G%d,IB_G%d,IC_G%d;VA_G%d,VB_G%d,VC_G%d,VA_G%d,VB_G%d,VC_G%d;", t_i, t_i, t_i, t_i, t_i, t_i, t_i, t_i, t_i);
-    if (t_i <= 4)
-    {
-      svCreate(t_i, svThreadRun, t_dataList);
-    }
-    else
-    {
-      break;
-    }
+    svCreate(t_i, svThreadRun);
   }
 }
 void work(int v_goosePubNum, int v_svPubNum)

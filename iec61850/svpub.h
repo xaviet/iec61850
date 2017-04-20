@@ -40,6 +40,17 @@
 
 //  struct
 
+struct s_smvData
+{
+  int m_vlanId;
+  int m_vlanPriority;
+  int m_appid;
+  int m_nofasdu;
+  char m_mac[DEF_macAddrLen];
+  char m_cb[DEF_string];
+  char m_dataSet[DEF_string];
+};
+
 //type:A;id:IA_TF7;phase:A;unit:A;factorA:1.165048;factorB:0.000000;samplingRate:5760;samplingNumber:23040;
 struct s_svAsduNode
 {
@@ -99,9 +110,15 @@ void svPublisherSetVlanId(struct s_svPublisher*, char*, int);
 
 void svPublisherSetAppid(struct s_svPublisher*, char*, int);
 
+void svPublisherSetMac(struct s_svPublisher*, char*, int);
+
+void svPublisherSetVlanPriority(struct s_svPublisher*, char*, int);
+
+void svPublisherSetNofasdu(struct s_svPublisher*, char*, int);
+
 void svPublisherSetEnable(struct s_svPublisher*, char*, int);
 
-void asduListParse(struct s_svPublisher*,char*);
+void asduListSet(struct s_svPublisher*);
 
 void svDataAsduListDestory(struct s_linkList*);
 
@@ -117,7 +134,7 @@ struct s_svPublisher* svPubCreate(struct s_gooseAndSvThreadData*);
 
 int svHeadCreate(struct s_svPublisher*);
 
-struct s_svAsduNode* setAsduNode(char*);
+struct s_svAsduNode* setAsduNode(char*, struct s_svPublisher*);
 
 int setSvApduLength(char, int, char*, int);
 
