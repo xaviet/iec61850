@@ -32,6 +32,8 @@ g_xmlExtendName='scd'
 g_dbPath='.{0}db{0}fengqiao.sdb'.format(os.sep)
 g_gooseTab='goose'
 g_smvTab='smv'
+g_vtTab='vt'
+g_vtMatch=['prefix','lnClass','lnInst','doName','daName','ldInst']
 
 def spentTime(v_fun):
   '''
@@ -246,24 +248,25 @@ class c_zipFile():
   def __exit__(self,exc_ty,exc_val,tb):
     self.m_zipFile.close()
 
-def createGooseTab(v_address,v_cb,v_dataSet,v_inputs):
+def createGooseTab(v_address,v_cb,v_vtTab):
   t_sn=1
   t_opt=[]
-  t_opt.append('create table if not exists \'{0}\'(sn integer primary key NOT NULL,appid integer,vlanid integer,vlanpriority integer,mac varchar,dataset varchar,cb varchar);'.format(g_gooseTab))
+  t_opt.append('create table if not exists \'{0}\'(sn integer primary key NOT NULL,appid integer,vlanid integer,vlanpriority integer,mac varchar,dataset varchar,cb varchar,inputs varchar);'.format(g_gooseTab))
   for t_cb in v_address:
     t_appid=str(int(v_address[t_cb]['APPID'],16))
     t_vlanid=str(int(v_address[t_cb]['VLAN-ID'],16))
     t_vlanpriority=str(int(v_address[t_cb]['VLAN-PRIORITY'],16))
     t_mac=v_address[t_cb]['MAC-Address']
     t_dataset='{0}${1}'.format((t_cb.split('$'))[0],v_cb[t_cb]['dataSet'])
-    t_opt.append('replace into \'{0}\'(sn,appid,vlanid,vlanpriority,mac,dataset,cb) values({1},{2},{3},{4},\'{5}\',\'{6}\',\'{7}\');'.format(g_gooseTab,t_sn,t_appid,t_vlanid,t_vlanpriority,t_mac,t_dataset,t_cb))
+    t_inputs=v_vtTab.get(t_dataset,'')
+    t_opt.append('replace into \'{0}\'(sn,appid,vlanid,vlanpriority,mac,dataset,cb,inputs) values({1},{2},{3},{4},\'{5}\',\'{6}\',\'{7}\',\'{8}\');'.format(g_gooseTab,t_sn,t_appid,t_vlanid,t_vlanpriority,t_mac,t_dataset,t_cb,t_inputs))
     t_sn+=1
   sqliteOptBatch(g_dbPath,t_opt)
   
-def createSmvTab(v_address,v_cb,v_dataSet,v_inputs):
+def createSmvTab(v_address,v_cb,v_vtTab):
   t_sn=1
   t_opt=[]
-  t_opt.append('create table if not exists \'{0}\'(sn integer primary key NOT NULL,appid integer,vlanid integer,vlanpriority integer,mac varchar,dataset varchar,cb varchar,nofasdu integer);'.format(g_smvTab))
+  t_opt.append('create table if not exists \'{0}\'(sn integer primary key NOT NULL,appid integer,vlanid integer,vlanpriority integer,mac varchar,dataset varchar,cb varchar,nofasdu integer,inputs varchar);'.format(g_smvTab))
   for t_cb in v_address:
     t_appid=str(int(v_address[t_cb]['APPID'],16))
     t_vlanid=str(int(v_address[t_cb]['VLAN-ID'],16))
@@ -271,10 +274,54 @@ def createSmvTab(v_address,v_cb,v_dataSet,v_inputs):
     t_mac=v_address[t_cb]['MAC-Address']
     t_dataset='{0}${1}'.format((t_cb.split('$'))[0],v_cb[t_cb]['dataSet'])
     t_nofasdu=str(int((v_cb[t_cb]['nofASDU'])))
-    t_opt.append('replace into \'{0}\'(sn,appid,vlanid,vlanpriority,mac,dataset,cb,nofasdu) values({1},{2},{3},{4},\'{5}\',\'{6}\',\'{7}\',{8});'.format(g_smvTab,t_sn,t_appid,t_vlanid,t_vlanpriority,t_mac,t_dataset,t_cb,t_nofasdu))
+    t_inputs=v_vtTab.get(t_dataset,'')
+    t_opt.append('replace into \'{0}\'(sn,appid,vlanid,vlanpriority,mac,dataset,cb,nofasdu,inputs) values({1},{2},{3},{4},\'{5}\',\'{6}\',\'{7}\',{8},\'{9}\');'.format(g_smvTab,t_sn,t_appid,t_vlanid,t_vlanpriority,t_mac,t_dataset,t_cb,t_nofasdu,t_inputs))
     t_sn+=1
   sqliteOptBatch(g_dbPath,t_opt)
+
+def vtMatch(v_extref,v_fcda):
+  t_rt=True
+  for el in g_vtMatch:
+    if(v_extref.get(el,'')!=v_fcda.get(el,'')):
+      t_rt=False
+      break
+  return(t_rt)
   
+def createVtTab(v_address,v_cb,v_dataset,v_inputs):
+  t_vtTab={}
+  t_sn=1
+  t_opt=[]
+  for el0 in v_inputs:
+    for el1 in el0['extRef']:
+      for el2 in v_dataset:
+        if(el2.split('/')[0]!='{0}{1}'.format(el1['iedName'],el1['ldInst'])):
+          continue
+        for el3 in v_dataset[el2]['fcda']:
+          if(vtMatch(el1,el3)):
+            t_key='{0}{1}/LLN0${2}'.format(v_dataset[el2]['ied'],v_dataset[el2]['ld'],v_dataset[el2]['name'])
+            t_value=el0['ied']
+            t_vtTab[t_key]=t_vtTab.get(t_key,'')+t_value+','
+            t_sn+=1
+            break
+          else:
+            continue
+        else:
+            continue
+        break
+      else:
+        logging.debug(' vt: no match [%s.%s/%s%s.%s.%s]'%(el1['iedName'],el1['ldInst'],el1['lnClass'],el1['lnInst'],el1['doName'],el1.get('daName',''),))
+  return(t_vtTab)
+
+def myTest(v_ds,v_in):
+  for t_key in v_ds:
+    t_ld=v_ds[t_key]['ld']
+    for el0 in v_ds[t_key]['fcda']:
+      if(el0['ldInst']!=t_ld):
+        print(t_ld,el0)
+  for el0 in v_in:
+    print(el0)
+    break
+    
 @spentTime
 def main(v_zipFile,v_xmlExtendName):
   t_zipFile=c_zipFile(v_zipFile,v_xmlExtendName)
@@ -293,91 +340,12 @@ def main(v_zipFile,v_xmlExtendName):
     logging.debug(' smvcb: %d'%(len(t_result[4]),)) 
     logging.debug(' dataset: %d'%(len(t_result[5]),)) 
     logging.debug(' inputs: %d'%(len(t_result[6]),)) 
-    createGooseTab(t_result[1],t_result[3],t_result[5],t_result[6])
-    createSmvTab(t_result[2],t_result[4],t_result[5],t_result[6])
+    #myTest(t_result[5],t_result[6])
+    t_vtTab=createVtTab(t_result[2],t_result[4],t_result[5],t_result[6])
+    createGooseTab(t_result[1],t_result[3],t_vtTab)
+    createSmvTab(t_result[2],t_result[4],t_vtTab)
     
 if(__name__=='__main__'):
   g_zipFile=sys.argv[1] if(len(sys.argv)>1) else g_zipFile
   logging.debug(' %s'%(g_zipFile,))
   main(g_zipFile,g_xmlExtendName)
-
-'''
-SCL
-Header
-History
-Hitem
-Substation
-Private
-VoltageLevel
-Voltage
-Bay
-SF_IED
-Communication
-SubNetwork
-ConnectedAP
-GSE
-Address
-P
-MinTime
-MaxTime
-PhysConn
-SMV
-IED
-Services
-DynAssociation
-GetDirectory
-GetDataObjectDefinition
-DataObjectDirectory
-GetDataSetValue
-DataSetDirectory
-ConfDataSet
-DynDataSet
-ReadWrite
-ConfReportControl
-GetCBValues
-ReportSettings
-GOOSE
-FileHandling
-ConfLNs
-LogSettings
-ConfLogControl
-AccessPoint
-Server
-Authentication
-LDevice
-LN0
-DataSet
-FCDA
-ReportControl
-TrgOps
-OptFields
-RptEnabled
-LogControl
-DOI
-DAI
-Val
-SDI
-LN
-SettingControl
-Inputs
-ExtRef
-GSEControl
-SettingGroups
-SGEdit
-ConfSG
-TimerActivatedControl
-SampledValueControl
-SmvOpts
-SMVSettings
-SmpRate
-DataTypeTemplates
-LNodeType
-DO
-DOType
-DA
-SDO
-DAType
-BDA
-EnumType
-EnumVal
-'''

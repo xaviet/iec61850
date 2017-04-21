@@ -169,8 +169,8 @@ void work(int v_goosePubNum, int v_svPubNum)
 int main(int argc, char** argv)
 {
   int t_test = 1;
-  int t_goosePubNum = 2;
-  int t_svPubNum = 2;
+  int t_goosePubNum = 8;
+  int t_svPubNum = 8;
   if (argc > 1)
   {
     sscanf(argv[1], "%d", &t_goosePubNum);
