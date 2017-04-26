@@ -8,7 +8,7 @@
 # m_    member value
 # t_    temporary value
 
-'''
+'''小东和小西一起和面
   xmlanalysis [xmlZipFile]
   
 '''
@@ -26,6 +26,52 @@ import sys
 import xml.etree.ElementTree as elementTree
 import sqlite3
 import os
+
+'''
+##!/usr/bin/env python3
+## -*- coding: utf-8 -*-
+
+import poplib
+#import email
+#import string
+ 
+ 
+mailServer=poplib.POP3('pop3.126.com')
+mailServer.user('toe_inner@126.com')
+mailServer.pass_('760829toe')
+ret=mailServer.stat()
+ 
+print(ret)
+
+for i in range(1,ret[0]+1):
+  mlist=mailServer.top(i,1)
+  print(mlist)
+
+#mailServer.dele(1)
+mailServer.quit()
+
+##!/usr/bin/env python3
+## -*- coding: utf-8 -*-
+
+import poplib
+#import email
+#import string
+ 
+ 
+mailServer=poplib.POP3('pop3.126.com')
+mailServer.user('toe_inner@126.com')
+mailServer.pass_('760829toe')
+ret=mailServer.stat()
+ 
+print(ret)
+
+for i in range(1,ret[0]+1):
+  mlist=mailServer.top(i,1)
+  print(mlist)
+
+#mailServer.dele(1)
+mailServer.quit()
+'''
 
 g_zipFile='.{0}fengqiao220.zip'.format(os.sep)
 g_xmlExtendName='scd'
