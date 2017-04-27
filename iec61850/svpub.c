@@ -219,7 +219,7 @@ int svHeadCreate(struct s_svPublisher* vp_svData)
   /* Priority tag - IEEE 802.1Q */
   vp_svData->mp_buffer[t_bufPos++] = (char)0x81;
   vp_svData->mp_buffer[t_bufPos++] = (char)0x00;
-  vp_svData->m_vlanId = 1;
+  //vp_svData->m_vlanId = 1;
   vp_svData->mp_buffer[t_bufPos++] = (char)((vp_svData->m_priority << 5) + (vp_svData->m_vlanId / 256)); /* Priority + VLAN-ID */
   vp_svData->mp_buffer[t_bufPos++] = (char)(vp_svData->m_vlanId % 256); /* VLAN-ID */
   vp_svData->mp_buffer[t_bufPos++] = (char)0x88; /* EtherType sv */
